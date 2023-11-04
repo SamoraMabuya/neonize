@@ -66,35 +66,24 @@
 
 <script>
   function update() {
+    var isDragging = false;
     rangeInput = document.getElementById("range");
     document.getElementById('rangeValue').innerText = rangeInput.value;
     slider = document.getElementsByClassName("slider")[0];
     slider.style.filter = "brightness(" + rangeInput.value + "%)";
+    parent.postMessage({ pluginMessage: { type: 'brightness', value: rangeInput.value, drag: isDragging} }, '*');
+
   }
 
-  // var isDragging = false;
 
-  // rangeInput = document.getElementById("range");
+ document.addEventListener("mousemove", function () {
+  if (isDragging) {
+    update();
+   }
+  });
 
-  // rangeInput.addEventListener("mousedown", function () {
-  //   isDragging = true;
-  // });
 
-  // document.addEventListener("mousemove", function () {
-  //   if (isDragging) {
-  //     update();
-  //   }
-  // });
 
-  // document.addEventListener("mouseup", function () {
-  //   isDragging = false;
-  // });
-
-  // rangeInput.addEventListener("input", function () {
-  //   if (isDragging) {
-  //     update();
-  //   }
-  // });
 </script>
 
   
