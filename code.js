@@ -2,7 +2,7 @@
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
 const updateBlurEffect = (msg) => {
-    const { value, drag } = msg;
+    const { value, } = msg;
     // Check if there's a selection on the current page
     if (figma.currentPage.selection.length > 0) {
         // Loop through selected nodes
@@ -14,11 +14,28 @@ const updateBlurEffect = (msg) => {
                 // Create a blur effect with the specified radius
                 const blurEffect = {
                     type: "LAYER_BLUR",
-                    radius: value / 400,
+                    radius: value * 1,
                     visible: true,
                 };
+                const innerShadow = {
+                    type: "INNER_SHADOW",
+                    radius: value * 1,
+                    visible: true,
+                    offset: {
+                        x: 0,
+                        y: 4,
+                    },
+                    blendMode: "NORMAL",
+                    color: {
+                        r: 0.255,
+                        g: 0.255,
+                        b: 0.255,
+                        a: 1
+                    }
+                };
+                const dropShadow, {};
                 // Set the node's effects to the created blur effect
-                node.effects = [blurEffect];
+                node.effects = [innerShadow];
                 // Log a message to indicate that the blur effect has been applied
                 console.log(`Applied blur effect to ${node.name || "unnamed node"}.`);
             }

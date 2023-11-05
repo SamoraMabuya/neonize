@@ -57,11 +57,11 @@
     id="range"
     type="range"
     min="0"
-    max="200"
-    value="100"
+    max="100"
+    value="0"
     oninput="update()"
   />
-  <p id="rangeValue">100</p>
+  <p id="rangeValue">0</p>
 </div>
 
 <script>
@@ -70,8 +70,8 @@
     rangeInput = document.getElementById("range");
     document.getElementById('rangeValue').innerText = rangeInput.value;
     slider = document.getElementsByClassName("slider")[0];
-    slider.style.filter = "brightness(" + rangeInput.value + "%)";
-    parent.postMessage({ pluginMessage: { type: 'brightness', value: rangeInput.value, drag: isDragging} }, '*');
+    // slider.style.filter = "brightness(" + rangeInput.value + "%)";
+    parent.postMessage({ pluginMessage: { type: 'brightness', value: rangeInput.value,} }, '*');
 
   }
 
