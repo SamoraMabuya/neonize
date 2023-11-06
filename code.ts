@@ -17,6 +17,9 @@ const updateBrightness = (msg: any) => {
           node.type === "ELLIPSE" ||
           node.type === "POLYGON"
         ) {
+          // Clone the selected node
+          cloneNode = node.clone();
+
           // Create a blur effect with the specified radius
           const blurEffect: BlurEffect = {
             type: "LAYER_BLUR",
@@ -50,15 +53,24 @@ const updateBrightness = (msg: any) => {
             showShadowBehindNode: true,
           };
 
-  
+          cloneNode.effects = [innerShadow, dropShadow];
 
-          node.effects = [innerShadow, dropShadow];
+          // Add the cloned node to the current page
+          figma.currentPage.appendChild(cloneNode);
 
+          // Automatically rename the clone node with "Copy" at the end of the name
+          if (cloneNode.name) {
+            cloneNode.name += " Copy";
+          } else {
+            cloneNode.name = "Copy";
+          }
 
-          // Set the node's effects to the created blur effect
+          // Group the original node and its clone
+          const group = figma.group([node, cloneNode], figma.currentPage);
+          group.name = "Grouped Node"; // Set a name for the group
 
           // Log a message to indicate that the blur effect has been applied
-          console.log(`Applied blur effect to ${node.name || "unnamed node"}.`);
+          console.log(`Applied blur effect and grouped nodes: ${node.name || "unnamed node"}.`);
         }
       }
     }
