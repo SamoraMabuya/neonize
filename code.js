@@ -15,6 +15,7 @@ const updateBrightness = (msg) => {
                     node.type === "POLYGON") {
                     // Clone the selected node
                     cloneNode = node.clone();
+                    cloneNode.y = node.y;
                     // Create a blur effect with the specified radius
                     const blurEffect = {
                         type: "LAYER_BLUR",
@@ -45,21 +46,32 @@ const updateBrightness = (msg) => {
                         blendMode: "NORMAL",
                         showShadowBehindNode: true,
                     };
-                    cloneNode.effects = [innerShadow, dropShadow];
+                    const layerBlur = {
+                        type: 'LAYER_BLUR',
+                        radius: value * 1,
+                        visible: true
+                    };
+                    node.effects = [innerShadow, dropShadow];
+                    cloneNode.effects = [layerBlur];
                     // Add the cloned node to the current page
                     figma.currentPage.appendChild(cloneNode);
                     // Automatically rename the clone node with "Copy" at the end of the name
                     if (cloneNode.name) {
-                        cloneNode.name += " Copy";
+                        cloneNode.name = " layer blur";
                     }
                     else {
                         cloneNode.name = "Copy";
                     }
+                    // set position
+                    console.log('position', cloneNode.x);
+                    console.log('clone position', node.x);
                     // Group the original node and its clone
                     const group = figma.group([node, cloneNode], figma.currentPage);
-                    group.name = "Grouped Node"; // Set a name for the group
+                    group.name = "Neonize effect"; // Set a name for the group
                     // Log a message to indicate that the blur effect has been applied
                     console.log(`Applied blur effect and grouped nodes: ${node.name || "unnamed node"}.`);
+                    cloneNode.x = node.x;
+                    cloneNode.y = node.y;
                 }
             }
         }
