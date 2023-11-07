@@ -40,7 +40,7 @@ const updateBrightness = (msg) => {
                             x: 0,
                             y: 4,
                         },
-                        radius: value * 1.5,
+                        radius: value / 100,
                         spread: 0,
                         visible: true,
                         blendMode: "NORMAL",
