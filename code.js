@@ -2,8 +2,8 @@
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
 let cloneNode = null;
-const updateBrightness = (msg) => {
-    const { value } = msg;
+figma.ui.onmessage = (messages) => {
+    const { value } = messages;
     // Check if there's a selection on the current page
     if (figma.currentPage.selection.length > 0) {
         // Loop through selected nodes
@@ -14,67 +14,38 @@ const updateBrightness = (msg) => {
                     node.type === "ELLIPSE" ||
                     node.type === "POLYGON") {
                     // Clone the selected node
-                    cloneNode = node.clone();
-                    cloneNode.y = node.y;
-                    // Create a blur effect with the specified radius
-                    const blurEffect = {
-                        type: "LAYER_BLUR",
-                        radius: value * 1,
-                        visible: true,
-                    };
-                    const innerShadow = {
-                        type: "INNER_SHADOW",
-                        radius: value * 1,
-                        visible: true,
-                        offset: {
-                            x: 0,
-                            y: 4,
-                        },
-                        blendMode: "NORMAL",
-                        color: { r: 1, g: 1, b: 1, a: 1 },
-                    };
-                    const dropShadow = {
+                    const baseGlow = {
                         type: "DROP_SHADOW",
                         color: { r: 1, g: 1, b: 1, a: 1 },
                         offset: {
                             x: 0,
-                            y: 4,
+                            y: 0,
                         },
-                        radius: value / 100,
+                        radius: value * 0.2,
                         spread: 0,
                         visible: true,
                         blendMode: "NORMAL",
-                        showShadowBehindNode: true,
+                        showShadowBehindNode: false,
                     };
-                    const layerBlur = {
-                        type: 'LAYER_BLUR',
-                        radius: value * 1,
-                        visible: true
+                    const spreadGlow = {
+                        type: "DROP_SHADOW",
+                        color: { r: 1, g: 1, b: 1, a: 1 },
+                        offset: {
+                            x: 0,
+                            y: 0,
+                        },
+                        radius: value * 0.8,
+                        spread: 11,
+                        visible: true,
+                        blendMode: "NORMAL",
+                        showShadowBehindNode: false,
                     };
-                    node.effects = [innerShadow, dropShadow];
-                    cloneNode.effects = [layerBlur];
-                    // Add the cloned node to the current page
-                    figma.currentPage.appendChild(cloneNode);
-                    // Automatically rename the clone node with "Copy" at the end of the name
-                    if (cloneNode.name) {
-                        cloneNode.name = " layer blur";
-                    }
-                    else {
-                        cloneNode.name = "Copy";
-                    }
+                    node.effects = [baseGlow, spreadGlow];
                     // set position
-                    console.log('position', cloneNode.x);
-                    console.log('clone position', node.x);
                     // Group the original node and its clone
-                    const group = figma.group([node, cloneNode], figma.currentPage);
-                    group.name = "Neonize effect"; // Set a name for the group
                     // Log a message to indicate that the blur effect has been applied
-                    console.log(`Applied blur effect and grouped nodes: ${node.name || "unnamed node"}.`);
-                    cloneNode.x = node.x;
-                    cloneNode.y = node.y;
                 }
             }
         }
     }
 };
-figma.ui.onmessage = updateBrightness;
