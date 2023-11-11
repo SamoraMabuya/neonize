@@ -57,7 +57,7 @@
     id="range"
     type="range"
     min="0"
-    max="100"
+    max="300"
     value="0"
     oninput="update()"
   />
@@ -70,17 +70,10 @@
     rangeInput = document.getElementById("range");
     document.getElementById('rangeValue').innerText = rangeInput.value;
     slider = document.getElementsByClassName("slider")[0];
-    // slider.style.filter = "brightness(" + rangeInput.value + "%)";
     parent.postMessage({ pluginMessage: { type: 'brightness', value: rangeInput.value,} }, '*');
 
   }
 
-
- document.addEventListener("mousemove", function () {
-  if (isDragging) {
-    update();
-   }
-  });
 
 
 
