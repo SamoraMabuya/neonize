@@ -1,9 +1,16 @@
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
 
-type NodeTypes = "RECTANGLE" | "ELLIPSE" | "POLYGON";
+const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON", "TEXT"];
 
-const isValidShapeType = (nodeType: string): NodeTypes => nodeType as NodeTypes;
+type NodeTypes = "RECTANGLE" | "ELLIPSE" | "POLYGON" | "TEXT";
+
+const isValidShapeType = (nodeType: string): NodeTypes | null => {
+  if (shapeValues.includes(nodeType)) {
+    return nodeType as NodeTypes;
+  }
+  return null;
+};
 
 function CreateEffects(value: number) {
   const baseGlow: DropShadowEffect = {
