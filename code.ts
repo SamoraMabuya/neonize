@@ -34,12 +34,25 @@ function ApplyShapeGlow(value: number) {
     radius: value * 2.8,
     visible: true,
   };
-  SecondaryTextGlow = {};
+  const secondaryTextGlow = {
+    type: "DROP_SHADOW",
+    color: { r: 1, g: 1, b: 1, a: 1 },
+    offset: {
+      x: 0,
+      y: 0,
+    },
+    radius: value * 0.2,
+    spread: 0,
+    visible: true,
+    blendMode: "NORMAL",
+    showShadowBehindNode: false,
+  };
 
   return {
     baseGlow,
     spreadGlow,
     primaryTextGlow,
+    secondaryTextGlow,
   };
 }
 
@@ -91,7 +104,8 @@ figma.ui.onmessage = (messages) => {
           figma.currentPage
         );
         group.name = "Group Node With Effect";
-        node.effects = [textGlow];
+        node.effects = [primaryTextGlow];
+        secondCloneNode.effects = [secondaryTextGlow];
 
         cloneNode.x = node.x;
         cloneNode.y = node.y;
