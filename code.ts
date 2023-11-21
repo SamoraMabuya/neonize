@@ -1,27 +1,6 @@
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
 
-const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
-
-type NodeTypes = "RECTANGLE" | "ELLIPSE" | "POLYGON";
-type TextType = "TEXT";
-
-let cloneNode: BaseNode | null = null; // Move the cloneNode outside the event handler
-
-const isValidShapeType = (nodeType: string): NodeTypes | null => {
-  if (shapeValues.includes(nodeType)) {
-    return nodeType as NodeTypes;
-  }
-  return null;
-};
-
-const isValidTextType = (nodeType: string): TextType | null => {
-  if (nodeType === "TEXT") {
-    return nodeType as TextType;
-  }
-  return null;
-};
-
 function ApplyShapeGlow(value: number) {
   const baseGlow: DropShadowEffect = {
     type: "DROP_SHADOW",
@@ -52,7 +31,6 @@ function ApplyShapeGlow(value: number) {
   };
   const textGlow: BlurEffect = {
     type: "LAYER_BLUR",
-
     radius: value * 2.8,
     visible: true,
   };
@@ -64,9 +42,39 @@ function ApplyShapeGlow(value: number) {
   };
 }
 
+const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
+
+type NodeTypes = "RECTANGLE" | "ELLIPSE" | "POLYGON";
+type TextType = "TEXT";
+
+let cloneNode: BaseNode | null = null; // Move the cloneNode outside the event handler
+
+const isValidShapeType = (nodeType: string): NodeTypes | null => {
+  if (shapeValues.includes(nodeType)) {
+    return nodeType as NodeTypes;
+  }
+  return null;
+};
+
+const isValidTextType = (nodeType: string): TextType | null => {
+  if (nodeType === "TEXT") {
+    return nodeType as TextType;
+  }
+  return null;
+};
 figma.ui.onmessage = (messages) => {
   const { value } = messages;
   const { baseGlow, spreadGlow, textGlow } = ApplyShapeGlow(value);
+
+  const ERROR_MESSAGE = "Please use ellipses, rectangles, polygons, or text";
+  const ERROR_OPTIONS: NotificationOptions = {
+    timeout: 400,
+    error: true,
+    button: {
+      text: "Dismiss",
+      action: () => true,
+    },
+  };
 
   // Check if cloneNode is not null before cloning again
   if (!cloneNode) {
@@ -90,5 +98,5 @@ figma.ui.onmessage = (messages) => {
     }
   }
 
-  return null;
+  return figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
 };

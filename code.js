@@ -1,20 +1,6 @@
 "use strict";
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
-const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
-let cloneNode = null; // Move the cloneNode outside the event handler
-const isValidShapeType = (nodeType) => {
-    if (shapeValues.includes(nodeType)) {
-        return nodeType;
-    }
-    return null;
-};
-const isValidTextType = (nodeType) => {
-    if (nodeType === "TEXT") {
-        return nodeType;
-    }
-    return null;
-};
 function ApplyShapeGlow(value) {
     const baseGlow = {
         type: "DROP_SHADOW",
@@ -53,9 +39,32 @@ function ApplyShapeGlow(value) {
         textGlow,
     };
 }
+const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
+let cloneNode = null; // Move the cloneNode outside the event handler
+const isValidShapeType = (nodeType) => {
+    if (shapeValues.includes(nodeType)) {
+        return nodeType;
+    }
+    return null;
+};
+const isValidTextType = (nodeType) => {
+    if (nodeType === "TEXT") {
+        return nodeType;
+    }
+    return null;
+};
 figma.ui.onmessage = (messages) => {
     const { value } = messages;
     const { baseGlow, spreadGlow, textGlow } = ApplyShapeGlow(value);
+    const ERROR_MESSAGE = "Please use ellipses, rectangles, polygons, or text";
+    const ERROR_OPTIONS = {
+        timeout: 400,
+        error: true,
+        button: {
+            text: "Dismiss",
+            action: () => true,
+        },
+    };
     // Check if cloneNode is not null before cloning again
     if (!cloneNode) {
         for (const node of figma.currentPage.selection) {
@@ -77,5 +86,5 @@ figma.ui.onmessage = (messages) => {
             }
         }
     }
-    return null;
+    return figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
 };
