@@ -31,7 +31,7 @@ function ApplyShapeGlow(value: number) {
   };
   const primaryTextGlow: BlurEffect = {
     type: "LAYER_BLUR",
-    radius: value * 2.8,
+    radius: value * 1.8,
     visible: true,
   };
   const secondaryTextGlow = {
@@ -60,8 +60,9 @@ const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
 
 type NodeTypes = "RECTANGLE" | "ELLIPSE" | "POLYGON";
 
-let cloneNode: BaseNode | null = null;
-let secondCloneNode: BaseNode | null = null;
+let cloneNode: BaseNode;
+let secondCloneNode: BaseNode;
+let thirdCloneNode: BaseNode;
 
 const isValidShapeType = (nodeType: string): NodeTypes | null => {
   if (shapeValues.includes(nodeType)) {
@@ -94,22 +95,23 @@ figma.ui.onmessage = (messages) => {
         validNodeFound = true;
       }
       if (node.type === "TEXT") {
-        cloneNode = node.clone();
-        cloneNode.name = "Clone";
+        node.name = "Base Node";
         secondCloneNode = node.clone();
-        secondCloneNode.name = "SecondClone";
+        secondCloneNode.name = "Intense Edge";
+        thirdCloneNode = node.clone();
+        thirdCloneNode.name = "Blur";
         figma.currentPage.appendChild(cloneNode);
         const group = figma.group(
-          [node, secondCloneNode, cloneNode],
+          [cloneNode, secondCloneNode, thirdCloneNode],
           figma.currentPage
         );
-        group.name = "Group Node With Effect";
+        figma.currentPage.appendChild(node);
+        group.name = "My Plugin";
         node.effects = [primaryTextGlow];
-        secondCloneNode.effects = [secondaryTextGlow];
-
-        cloneNode.x = node.x;
-        cloneNode.y = node.y;
+        // secondCloneNode.effects = [secondaryTextGlow];
         secondCloneNode.x = node.x;
+        secondCloneNode.y = node.y;
+        thirdCloneNode.x = node.x;
         secondCloneNode.y = node.y;
         validNodeFound = true;
       }
