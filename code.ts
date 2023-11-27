@@ -34,14 +34,14 @@ function ApplyShapeGlow(value: number) {
     radius: value * 1.8,
     visible: true,
   };
-  const secondaryTextGlow = {
+  const secondaryTextGlow: DropShadowEffect = {
     type: "DROP_SHADOW",
     color: { r: 1, g: 1, b: 1, a: 1 },
     offset: {
       x: 0,
       y: 0,
     },
-    radius: value * 0.2,
+    radius: value * 0.8,
     spread: 0,
     visible: true,
     blendMode: "NORMAL",
@@ -60,7 +60,7 @@ const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
 
 type NodeTypes = "RECTANGLE" | "ELLIPSE" | "POLYGON";
 
-let cloneNode: BaseNode;
+let cloneNode: BaseNode | null;
 let secondCloneNode: BaseNode;
 let thirdCloneNode: BaseNode;
 
@@ -73,7 +73,8 @@ const isValidShapeType = (nodeType: string): NodeTypes | null => {
 
 figma.ui.onmessage = (messages) => {
   const { value } = messages;
-  const { baseGlow, spreadGlow, primaryTextGlow } = ApplyShapeGlow(value);
+  const { baseGlow, spreadGlow, primaryTextGlow, secondaryTextGlow } =
+    ApplyShapeGlow(value);
 
   const ERROR_MESSAGE = "Please use ellipses, rectangles, polygons, or text";
   const ERROR_OPTIONS: NotificationOptions = {
@@ -95,24 +96,23 @@ figma.ui.onmessage = (messages) => {
         validNodeFound = true;
       }
       if (node.type === "TEXT") {
-        node.name = "Base Node";
+        cloneNode = node.clone();
+        cloneNode.name = "Base Node";
         secondCloneNode = node.clone();
         secondCloneNode.name = "Intense Edge";
-        thirdCloneNode = node.clone();
-        thirdCloneNode.name = "Blur";
         figma.currentPage.appendChild(cloneNode);
+        figma.currentPage.appendChild(secondCloneNode);
         const group = figma.group(
-          [cloneNode, secondCloneNode, thirdCloneNode],
+          [node, cloneNode, secondCloneNode],
           figma.currentPage
         );
-        figma.currentPage.appendChild(node);
+        const position = [node.x, node.y];
+
         group.name = "My Plugin";
         node.effects = [primaryTextGlow];
-        // secondCloneNode.effects = [secondaryTextGlow];
-        secondCloneNode.x = node.x;
-        secondCloneNode.y = node.y;
-        thirdCloneNode.x = node.x;
-        secondCloneNode.y = node.y;
+        cloneNode.effects = [secondaryTextGlow];
+        [cloneNode.x, cloneNode.y] = position;
+        [secondCloneNode.x, secondCloneNode.y] = position;
         validNodeFound = true;
       }
     }
