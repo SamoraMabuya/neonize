@@ -105,5 +105,9 @@ figma.ui.onmessage = (messages) => {
         if (!validNodeFound) {
             figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
         }
+        if (validNodeFound) {
+            cloneNode.effects = [primaryTextGlow];
+            secondCloneNode.effects = [secondaryTextGlow];
+        }
     }
 };

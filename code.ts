@@ -59,10 +59,19 @@ function ApplyShapeGlow(value: number) {
 const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
 
 type NodeTypes = "RECTANGLE" | "ELLIPSE" | "POLYGON";
+type Effects = DropShadowEffect | InnerShadowEffect | BlurEffect | BaseNode;
 
-let cloneNode: BaseNode | null;
-let secondCloneNode: BaseNode;
-let thirdCloneNode: BaseNode;
+let cloneNode: DropShadowEffect | InnerShadowEffect | BlurEffect | BaseNode;
+let secondCloneNode:
+  | DropShadowEffect
+  | InnerShadowEffect
+  | BlurEffect
+  | BaseNode;
+let thirdCloneNode:
+  | DropShadowEffect
+  | InnerShadowEffect
+  | BlurEffect
+  | BaseNode;
 
 const isValidShapeType = (nodeType: string): NodeTypes | null => {
   if (shapeValues.includes(nodeType)) {
@@ -120,6 +129,10 @@ figma.ui.onmessage = (messages) => {
     // Check if a valid node is not found and show the error notification
     if (!validNodeFound) {
       figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
+    }
+    if (validNodeFound) {
+      cloneNode.effects = [primaryTextGlow];
+      secondCloneNode.effects = [secondaryTextGlow];
     }
   }
 };
