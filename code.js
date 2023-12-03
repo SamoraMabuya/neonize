@@ -28,35 +28,22 @@ function ApplyShapeGlow(value) {
         blendMode: "NORMAL",
         showShadowBehindNode: false,
     };
-    const primaryTextGlow = {
+    const fairBlur = {
         type: "LAYER_BLUR",
-        radius: value * 1.8,
+        radius: value * 2,
         visible: true,
-    };
-    const secondaryTextGlow = {
-        type: "DROP_SHADOW",
-        color: { r: 1, g: 1, b: 1, a: 1 },
-        offset: {
-            x: 0,
-            y: 0,
-        },
-        radius: value * 0.8,
-        spread: 0,
-        visible: true,
-        blendMode: "NORMAL",
-        showShadowBehindNode: false,
     };
     return {
         baseGlow,
         spreadGlow,
-        primaryTextGlow,
-        secondaryTextGlow,
+        fairBlur,
     };
 }
 const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
 let cloneNode;
-let secondCloneNode;
-let thirdCloneNode;
+let cloneNode2;
+let cloneNode3;
+let cloneNode4;
 const isValidShapeType = (nodeType) => {
     if (shapeValues.includes(nodeType)) {
         return nodeType;
@@ -65,7 +52,7 @@ const isValidShapeType = (nodeType) => {
 };
 figma.ui.onmessage = (messages) => {
     const { value } = messages;
-    const { baseGlow, spreadGlow, primaryTextGlow, secondaryTextGlow } = ApplyShapeGlow(value);
+    const { baseGlow, spreadGlow, fairBlur } = ApplyShapeGlow(value);
     const ERROR_MESSAGE = "Please use ellipses, rectangles, polygons, or text";
     const ERROR_OPTIONS = {
         timeout: 400,
@@ -77,37 +64,46 @@ figma.ui.onmessage = (messages) => {
     };
     // Check if cloneNode is not null before cloning again
     if (!cloneNode) {
-        let validNodeFound = false; // Flag to check if a valid node is found
         for (const node of figma.currentPage.selection) {
             const shapeType = isValidShapeType(node.type);
             if (node.type === shapeType) {
                 node.effects = [baseGlow, spreadGlow];
-                validNodeFound = true;
             }
             if (node.type === "TEXT") {
                 cloneNode = node.clone();
-                cloneNode.name = "Base Node";
-                secondCloneNode = node.clone();
-                secondCloneNode.name = "Intense Edge";
-                figma.currentPage.appendChild(cloneNode);
-                figma.currentPage.appendChild(secondCloneNode);
-                const group = figma.group([node, cloneNode, secondCloneNode], figma.currentPage);
+                cloneNode.name = "Clone";
+                cloneNode2 = node.clone();
+                cloneNode2.name = "Clone2";
+                cloneNode3 = node.clone();
+                cloneNode3.name = "Clone3";
+                cloneNode4 = node.clone();
+                cloneNode4.name = "Clone4";
+                const group = figma.group([node, cloneNode, cloneNode2, cloneNode3, cloneNode4], figma.currentPage);
+                group.appendChild(node);
+                group.insertChild(1, cloneNode4);
+                group.insertChild(2, cloneNode3);
+                group.insertChild(3, cloneNode2);
+                group.insertChild(4, cloneNode);
                 const position = [node.x, node.y];
-                group.name = "My Plugin";
-                node.effects = [primaryTextGlow];
-                cloneNode.effects = [secondaryTextGlow];
                 [cloneNode.x, cloneNode.y] = position;
-                [secondCloneNode.x, secondCloneNode.y] = position;
-                validNodeFound = true;
+                [cloneNode2.x, cloneNode2.y] = position;
+                [cloneNode3.x, cloneNode3.y] = position;
+                [cloneNode4.x, cloneNode4.y] = position;
+                cloneNode.effects = [fairBlur];
+                cloneNode2.effects = [fairBlur];
             }
-        }
-        // Check if a valid node is not found and show the error notification
-        if (!validNodeFound) {
-            figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
-        }
-        if (validNodeFound) {
-            cloneNode.effects = [primaryTextGlow];
-            secondCloneNode.effects = [secondaryTextGlow];
+            if (node.type === "GROUP") {
+                let containsText = false;
+                for (const child of node.children) {
+                    if (child.type === "TEXT") {
+                        cloneNode.effects = [fairBlur];
+                    }
+                }
+                if (!containsText) {
+                    // Show an error if the group doesn't contain a TEXT node
+                    figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
+                }
+            }
         }
     }
 };
