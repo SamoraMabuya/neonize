@@ -89,21 +89,21 @@ figma.ui.onmessage = (messages) => {
                 [cloneNode2.x, cloneNode2.y] = position;
                 [cloneNode3.x, cloneNode3.y] = position;
                 [cloneNode4.x, cloneNode4.y] = position;
+                group.appendChild(cloneNode);
+                group.appendChild(cloneNode2);
+                group.appendChild(cloneNode3);
+                group.appendChild(cloneNode4);
                 cloneNode.effects = [fairBlur];
                 cloneNode2.effects = [fairBlur];
-            }
-            if (node.type === "GROUP") {
-                let containsText = false;
-                for (const child of node.children) {
-                    if (child.type === "TEXT") {
-                        cloneNode.effects = [fairBlur];
-                    }
-                }
-                if (!containsText) {
-                    // Show an error if the group doesn't contain a TEXT node
-                    figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
-                }
+                cloneNode3.effects = [fairBlur];
+                cloneNode4.effects = [fairBlur];
             }
         }
+    }
+    else {
+        cloneNode.effects = [fairBlur];
+        cloneNode2.effects = [fairBlur];
+        cloneNode3.effects = [fairBlur];
+        cloneNode4.effects = [fairBlur];
     }
 };
