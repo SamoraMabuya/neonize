@@ -30,13 +30,19 @@ function ApplyShapeGlow(value) {
     };
     const fairBlur = {
         type: "LAYER_BLUR",
-        radius: value * 2,
+        radius: value * 1,
+        visible: true,
+    };
+    const intenseBlur = {
+        type: "LAYER_BLUR",
+        radius: value * 0.1,
         visible: true,
     };
     return {
         baseGlow,
         spreadGlow,
         fairBlur,
+        intenseBlur,
     };
 }
 const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
@@ -52,7 +58,7 @@ const isValidShapeType = (nodeType) => {
 };
 figma.ui.onmessage = (messages) => {
     const { value } = messages;
-    const { baseGlow, spreadGlow, fairBlur } = ApplyShapeGlow(value);
+    const { baseGlow, spreadGlow, fairBlur, intenseBlur } = ApplyShapeGlow(value);
     const ERROR_MESSAGE = "Please use ellipses, rectangles, polygons, or text";
     const ERROR_OPTIONS = {
         timeout: 400,
@@ -79,20 +85,16 @@ figma.ui.onmessage = (messages) => {
                 cloneNode4 = node.clone();
                 cloneNode4.name = "Clone4";
                 const group = figma.group([node, cloneNode, cloneNode2, cloneNode3, cloneNode4], figma.currentPage);
-                group.appendChild(node);
-                group.insertChild(1, cloneNode4);
-                group.insertChild(2, cloneNode3);
-                group.insertChild(3, cloneNode2);
-                group.insertChild(4, cloneNode);
                 const position = [node.x, node.y];
                 [cloneNode.x, cloneNode.y] = position;
                 [cloneNode2.x, cloneNode2.y] = position;
                 [cloneNode3.x, cloneNode3.y] = position;
                 [cloneNode4.x, cloneNode4.y] = position;
-                group.appendChild(cloneNode);
-                group.appendChild(cloneNode2);
-                group.appendChild(cloneNode3);
-                group.appendChild(cloneNode4);
+                group.appendChild(node);
+                group.insertChild(1, cloneNode4);
+                group.insertChild(2, cloneNode3);
+                group.insertChild(3, cloneNode2);
+                group.insertChild(4, cloneNode);
                 cloneNode.effects = [fairBlur];
                 cloneNode2.effects = [fairBlur];
                 cloneNode3.effects = [fairBlur];
@@ -101,8 +103,8 @@ figma.ui.onmessage = (messages) => {
         }
     }
     else {
-        cloneNode.effects = [fairBlur];
-        cloneNode2.effects = [fairBlur];
+        cloneNode.effects = [intenseBlur];
+        cloneNode2.effects = [intenseBlur];
         cloneNode3.effects = [fairBlur];
         cloneNode4.effects = [fairBlur];
     }
