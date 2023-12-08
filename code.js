@@ -29,14 +29,30 @@ function ApplyShapeGlow(value) {
         showShadowBehindNode: false,
     };
     const fairBlur = {
-        type: "LAYER_BLUR",
-        radius: value * 1,
+        type: "DROP_SHADOW",
+        color: { r: 1, g: 1, b: 1, a: 1 },
+        offset: {
+            x: 0,
+            y: 0,
+        },
+        radius: value * 0.8,
+        spread: 0,
         visible: true,
+        blendMode: "NORMAL",
+        showShadowBehindNode: false,
     };
     const intenseBlur = {
-        type: "LAYER_BLUR",
-        radius: value * 0.1,
+        type: "DROP_SHADOW",
+        color: { r: 1, g: 1, b: 1, a: 1 },
+        offset: {
+            x: 0,
+            y: 0,
+        },
+        radius: value * 0.2,
+        spread: 0,
         visible: true,
+        blendMode: "NORMAL",
+        showShadowBehindNode: false,
     };
     return {
         baseGlow,
@@ -95,6 +111,15 @@ figma.ui.onmessage = (messages) => {
                 group.insertChild(2, cloneNode3);
                 group.insertChild(3, cloneNode2);
                 group.insertChild(4, cloneNode);
+                node.strokes = [
+                    {
+                        type: "SOLID",
+                        color: { r: 1, g: 1, b: 1 },
+                        visible: true,
+                        opacity: 1,
+                        blendMode: "NORMAL",
+                    },
+                ];
                 cloneNode.effects = [fairBlur];
                 cloneNode2.effects = [fairBlur];
                 cloneNode3.effects = [fairBlur];
