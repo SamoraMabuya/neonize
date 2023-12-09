@@ -55,7 +55,7 @@
 
 <!-- UI -->
 <div class="slider">
-    <input id="range" type="range" min="0" max="500" value="0" oninput="update()" />
+    <input id="range" type="range" min="0" max="300" value="0" oninput="update()" />
     <p id="rangeValue">0</p>
 </div>
 
@@ -67,7 +67,6 @@
         slider = document.getElementsByClassName("slider")[0];
         parent.postMessage({
             pluginMessage: {
-                type: 'brightness',
                 value: rangeInput.value,
             }
         }, '*');

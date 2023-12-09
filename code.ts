@@ -1,66 +1,30 @@
 "use strict";
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
-function ApplyShapeGlow(value: number) {
-  const baseGlow: DropShadowEffect = {
-    type: "DROP_SHADOW",
-    color: { r: 1, g: 1, b: 1, a: 1 },
-    offset: {
-      x: 0,
-      y: 0,
-    },
-    radius: value * 0.2,
-    spread: 0,
-    visible: true,
-    blendMode: "NORMAL",
-    showShadowBehindNode: false,
-  };
-  const spreadGlow: DropShadowEffect = {
-    type: "DROP_SHADOW",
-    color: { r: 1, g: 1, b: 1, a: 1 },
-    offset: {
-      x: 0,
-      y: 0,
-    },
-    radius: value * 0.8,
-    spread: 11,
-    visible: true,
-    blendMode: "NORMAL",
-    showShadowBehindNode: false,
-  };
 
-  const fairBlur: DropShadowEffect = {
-    type: "DROP_SHADOW",
-    color: { r: 1, g: 1, b: 1, a: 1 },
-    offset: {
-      x: 0,
-      y: 0,
-    },
-    radius: value * 0.8,
-    spread: 0,
-    visible: true,
-    blendMode: "NORMAL",
-    showShadowBehindNode: false,
-  };
-  const intenseBlur: DropShadowEffect = {
-    type: "DROP_SHADOW",
-    color: { r: 1, g: 1, b: 1, a: 1 },
-    offset: {
-      x: 0,
-      y: 0,
-    },
-    radius: value * 0.2,
-    spread: 0,
-    visible: true,
-    blendMode: "NORMAL",
-    showShadowBehindNode: false,
-  };
+const defaultDropShadowEffect = (
+  radiusMultiplier: number,
+  spread: number
+): DropShadowEffect => ({
+  type: "DROP_SHADOW",
+  color: { r: 1, g: 1, b: 1, a: 1 }, // Reusable color object
+  offset: { x: 0, y: 0 },
+  radius: radiusMultiplier,
+  spread: spread,
+  visible: true,
+  blendMode: "NORMAL",
+  showShadowBehindNode: false,
+});
+
+function ApplyShapeGlow(value: number) {
+  const baseMultiplier = value * 0.2;
+  const spreadMultiplier = value * 0.8;
 
   return {
-    baseGlow,
-    spreadGlow,
-    fairBlur,
-    intenseBlur,
+    baseGlow: defaultDropShadowEffect(baseMultiplier, 0),
+    spreadGlow: defaultDropShadowEffect(spreadMultiplier, 11),
+    fairBlur: defaultDropShadowEffect(spreadMultiplier, 0),
+    intenseBlur: defaultDropShadowEffect(baseMultiplier, 0),
   };
 }
 const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
@@ -78,7 +42,6 @@ const isValidShapeType = (nodeType: string): NodeTypes | null => {
   }
   return null;
 };
-
 figma.ui.onmessage = (messages) => {
   const { value } = messages;
   const { baseGlow, spreadGlow, fairBlur, intenseBlur } = ApplyShapeGlow(value);
@@ -86,63 +49,73 @@ figma.ui.onmessage = (messages) => {
   const ERROR_OPTIONS = {
     timeout: 400,
     error: true,
-    button: {
-      text: "Dismiss",
-      action: () => true,
-    },
+    button: { text: "Dismiss", action: () => true },
   };
 
-  // Check if cloneNode is not null before cloning again
-  if (!cloneNode) {
-    for (const node of figma.currentPage.selection) {
-      const shapeType = isValidShapeType(node.type);
+  type NodeType = RectangleNode | EllipseNode | PolygonNode | TextNode;
+  type Effect = DropShadowEffect | InnerShadowEffect | BlurEffect;
+  const isNodeType = (node: SceneNode): node is NodeType => {
+    return (
+      node.type === "RECTANGLE" ||
+      node.type === "ELLIPSE" ||
+      node.type === "POLYGON" ||
+      node.type === "TEXT"
+    );
+  };
+  const applyEffectsToNode = (node: NodeType, effects: Effect[]) => {
+    if (!node) return;
+    node.effects = effects;
+  };
 
-      if (node.type === shapeType) {
-        node.effects = [baseGlow, spreadGlow];
-      }
-      if (node.type === "TEXT") {
-        cloneNode = node.clone();
-        cloneNode.name = "Clone";
-        cloneNode2 = node.clone();
-        cloneNode2.name = "Clone2";
-        cloneNode3 = node.clone();
-        cloneNode3.name = "Clone3";
-        cloneNode4 = node.clone();
-        cloneNode4.name = "Clone4";
-        const group = figma.group(
-          [node, cloneNode, cloneNode2, cloneNode3, cloneNode4],
-          figma.currentPage
-        );
-        const position = [node.x, node.y];
-        [cloneNode.x, cloneNode.y] = position;
-        [cloneNode2.x, cloneNode2.y] = position;
-        [cloneNode3.x, cloneNode3.y] = position;
-        [cloneNode4.x, cloneNode4.y] = position;
-        group.appendChild(node);
-        group.insertChild(1, cloneNode4);
-        group.insertChild(2, cloneNode3);
-        group.insertChild(3, cloneNode2);
-        group.insertChild(4, cloneNode);
-        node.strokes = [
-          {
-            type: "SOLID",
-            color: { r: 1, g: 1, b: 1 },
-            visible: true,
-            opacity: 1,
-            blendMode: "NORMAL",
-          },
-        ];
-
-        cloneNode.effects = [fairBlur];
-        cloneNode2.effects = [fairBlur];
-        cloneNode3.effects = [fairBlur];
-        cloneNode4.effects = [fairBlur];
-      }
+  const cloneAndApplyEffects = (node: SceneNode, effect: Effect) => {
+    const clone = node.clone();
+    if (isNodeType(clone)) {
+      applyEffectsToNode(clone, [effect]);
+      return clone;
     }
-  } else {
-    cloneNode.effects = [intenseBlur];
-    cloneNode2.effects = [intenseBlur];
-    cloneNode3.effects = [fairBlur];
-    cloneNode4.effects = [fairBlur];
+    return null;
+  };
+
+  for (const node of figma.currentPage.selection) {
+    const shapeType = isValidShapeType(node.type);
+
+    switch (node.type) {
+      case shapeType:
+        applyEffectsToNode(node, [baseGlow, spreadGlow]);
+        break;
+      case "TEXT":
+        if (!cloneNode) {
+          cloneNode = cloneAndApplyEffects(node, fairBlur);
+          cloneNode2 = cloneAndApplyEffects(node, fairBlur);
+          cloneNode3 = cloneAndApplyEffects(node, fairBlur);
+          cloneNode4 = cloneAndApplyEffects(node, fairBlur);
+
+          // Grouping and positioning clones
+          const clones = [node, cloneNode, cloneNode2, cloneNode3, cloneNode4];
+          const group = figma.group(clones, figma.currentPage);
+          clones.forEach((clone, index) => {
+            clone.x = node.x;
+            clone.y = node.y;
+            group.insertChild(index, clone);
+          });
+          node.strokes = [
+            {
+              type: "SOLID",
+              color: { r: 1, g: 1, b: 1 },
+              visible: true,
+              opacity: 1,
+              blendMode: "NORMAL",
+            },
+          ];
+        } else {
+          applyEffectsToNode(cloneNode, [intenseBlur]);
+          applyEffectsToNode(cloneNode2, [intenseBlur]);
+          applyEffectsToNode(cloneNode3, [fairBlur]);
+          applyEffectsToNode(cloneNode4, [fairBlur]);
+        }
+        break;
+      default:
+        figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
+    }
   }
 };
