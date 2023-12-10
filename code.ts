@@ -2,12 +2,14 @@
 figma.showUI(__html__);
 figma.ui.resize(400, 400);
 
+const PLUGIN_GROUP_NAME = "PluginTextGlowGroup";
+
 const defaultDropShadowEffect = (
   radiusMultiplier: number,
   spread: number
 ): DropShadowEffect => ({
   type: "DROP_SHADOW",
-  color: { r: 1, g: 1, b: 1, a: 1 }, // Reusable color object
+  color: { r: 1, g: 1, b: 1, a: 1 },
   offset: { x: 0, y: 0 },
   radius: radiusMultiplier,
   spread: spread,
@@ -27,14 +29,14 @@ function ApplyShapeGlow(value: number) {
     intenseBlur: defaultDropShadowEffect(baseMultiplier, 0),
   };
 }
-const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
 
+const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
 type NodeTypes = "RECTANGLE" | "ELLIPSE" | "POLYGON";
 
-let cloneNode: any;
-let cloneNode2: any;
-let cloneNode3: any;
-let cloneNode4: any;
+let cloneNode: TextNode;
+let cloneNode2: TextNode;
+let cloneNode3: TextNode;
+let cloneNode4: TextNode;
 
 const isValidShapeType = (nodeType: string): NodeTypes | null => {
   if (shapeValues.includes(nodeType)) {
@@ -42,6 +44,39 @@ const isValidShapeType = (nodeType: string): NodeTypes | null => {
   }
   return null;
 };
+
+type NodeTypeings =
+  | RectangleNode
+  | EllipseNode
+  | PolygonNode
+  | TextNode
+  | GroupNode;
+type Effects = DropShadowEffect | InnerShadowEffect | BlurEffect;
+
+const isNodeType = (node: SceneNode): node is NodeTypeings => {
+  return (
+    node.type === "RECTANGLE" ||
+    node.type === "ELLIPSE" ||
+    node.type === "POLYGON" ||
+    node.type === "TEXT" ||
+    (node.type === "GROUP" && node.name === PLUGIN_GROUP_NAME)
+  );
+};
+
+const applyEffectsToNode = (node: NodeTypeings, effects: Effects[]) => {
+  if (!node) return;
+  node.effects = effects;
+};
+
+const cloneAndApplyEffects = (node: SceneNode, effect: Effects) => {
+  const clone = node.clone();
+  if (isNodeType(clone)) {
+    applyEffectsToNode(clone, [effect]);
+    return clone as TextNode;
+  }
+  return null;
+};
+
 figma.ui.onmessage = (messages) => {
   const { value } = messages;
   const { baseGlow, spreadGlow, fairBlur, intenseBlur } = ApplyShapeGlow(value);
@@ -52,70 +87,80 @@ figma.ui.onmessage = (messages) => {
     button: { text: "Dismiss", action: () => true },
   };
 
-  type NodeType = RectangleNode | EllipseNode | PolygonNode | TextNode;
-  type Effect = DropShadowEffect | InnerShadowEffect | BlurEffect;
-  const isNodeType = (node: SceneNode): node is NodeType => {
-    return (
-      node.type === "RECTANGLE" ||
-      node.type === "ELLIPSE" ||
-      node.type === "POLYGON" ||
-      node.type === "TEXT"
-    );
-  };
-  const applyEffectsToNode = (node: NodeType, effects: Effect[]) => {
-    if (!node) return;
-    node.effects = effects;
-  };
-
-  const cloneAndApplyEffects = (node: SceneNode, effect: Effect) => {
-    const clone = node.clone();
-    if (isNodeType(clone)) {
-      applyEffectsToNode(clone, [effect]);
-      return clone;
-    }
-    return null;
-  };
-
   for (const node of figma.currentPage.selection) {
-    const shapeType = isValidShapeType(node.type);
-
-    switch (node.type) {
-      case shapeType:
-        applyEffectsToNode(node, [baseGlow, spreadGlow]);
-        break;
-      case "TEXT":
-        if (!cloneNode) {
-          cloneNode = cloneAndApplyEffects(node, fairBlur);
-          cloneNode2 = cloneAndApplyEffects(node, fairBlur);
-          cloneNode3 = cloneAndApplyEffects(node, fairBlur);
-          cloneNode4 = cloneAndApplyEffects(node, fairBlur);
-
-          // Grouping and positioning clones
-          const clones = [node, cloneNode, cloneNode2, cloneNode3, cloneNode4];
-          const group = figma.group(clones, figma.currentPage);
-          clones.forEach((clone, index) => {
-            clone.x = node.x;
-            clone.y = node.y;
-            group.insertChild(index, clone);
-          });
-          node.strokes = [
-            {
-              type: "SOLID",
-              color: { r: 1, g: 1, b: 1 },
-              visible: true,
-              opacity: 1,
-              blendMode: "NORMAL",
-            },
-          ];
-        } else {
-          applyEffectsToNode(cloneNode, [intenseBlur]);
-          applyEffectsToNode(cloneNode2, [intenseBlur]);
-          applyEffectsToNode(cloneNode3, [fairBlur]);
-          applyEffectsToNode(cloneNode4, [fairBlur]);
+    if (node.type === "GROUP" && node.name === PLUGIN_GROUP_NAME) {
+      node.children.forEach((child) => {
+        if (child.type === "TEXT") {
+          applyEffectsToNode(child, [intenseBlur, fairBlur]);
         }
-        break;
-      default:
-        figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
+      });
+    } else {
+      const shapeType = isValidShapeType(node.type);
+      switch (node.type) {
+        case shapeType:
+          applyEffectsToNode(node, [baseGlow, spreadGlow]);
+          break;
+        case "TEXT":
+          // Check if the node is already part of a plugin-created group
+          const isAlreadyGrouped =
+            node.parent &&
+            node.parent.type === "GROUP" &&
+            node.parent.name === PLUGIN_GROUP_NAME;
+
+          if (!isAlreadyGrouped) {
+            const maybeCloneNode = cloneAndApplyEffects(node, fairBlur);
+            const maybeCloneNode2 = cloneAndApplyEffects(node, fairBlur);
+            const maybeCloneNode3 = cloneAndApplyEffects(node, fairBlur);
+            const maybeCloneNode4 = cloneAndApplyEffects(node, fairBlur);
+
+            if (
+              maybeCloneNode &&
+              maybeCloneNode2 &&
+              maybeCloneNode3 &&
+              maybeCloneNode4
+            ) {
+              cloneNode = maybeCloneNode;
+              cloneNode2 = maybeCloneNode2;
+              cloneNode3 = maybeCloneNode3;
+              cloneNode4 = maybeCloneNode4;
+
+              // Grouping and positioning clones
+              const clones = [
+                node,
+                cloneNode,
+                cloneNode2,
+                cloneNode3,
+                cloneNode4,
+              ];
+              const group = figma.group(clones, figma.currentPage);
+              group.name = PLUGIN_GROUP_NAME;
+              clones.forEach((clone, index) => {
+                clone.x = node.x;
+                clone.y = node.y;
+                group.insertChild(index, clone);
+              });
+
+              node.strokes = [
+                {
+                  type: "SOLID",
+                  color: { r: 1, g: 1, b: 1 },
+                  visible: true,
+                  opacity: 1,
+                  blendMode: "NORMAL",
+                },
+              ];
+            }
+          } else {
+            // Apply updates to the clones if the node is already grouped
+            applyEffectsToNode(cloneNode, [intenseBlur]);
+            applyEffectsToNode(cloneNode2, [intenseBlur]);
+            applyEffectsToNode(cloneNode3, [fairBlur]);
+            applyEffectsToNode(cloneNode4, [fairBlur]);
+          }
+          break;
+        default:
+          figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
+      }
     }
   }
 };
