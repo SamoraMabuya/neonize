@@ -101,13 +101,20 @@ figma.ui.onmessage = (messages) => {
           applyEffectsToNode(node, [baseGlow, spreadGlow]);
           break;
         case "TEXT":
-          // Check if the node is already part of a plugin-created group
-          const isAlreadyGrouped =
+          // Check if the node is part of a plugin-created group
+          const isPartOfPluginGroup =
             node.parent &&
             node.parent.type === "GROUP" &&
             node.parent.name === PLUGIN_GROUP_NAME;
 
-          if (!isAlreadyGrouped) {
+          if (isPartOfPluginGroup) {
+            // Apply effects to all text nodes within the group
+            node.parent.children.forEach((child) => {
+              if (child.type === "TEXT") {
+                applyEffectsToNode(child as TextNode, [intenseBlur, fairBlur]);
+              }
+            });
+          } else {
             const maybeCloneNode = cloneAndApplyEffects(node, fairBlur);
             const maybeCloneNode2 = cloneAndApplyEffects(node, fairBlur);
             const maybeCloneNode3 = cloneAndApplyEffects(node, fairBlur);
@@ -150,12 +157,6 @@ figma.ui.onmessage = (messages) => {
                 },
               ];
             }
-          } else {
-            // Apply updates to the clones if the node is already grouped
-            applyEffectsToNode(cloneNode, [intenseBlur]);
-            applyEffectsToNode(cloneNode2, [intenseBlur]);
-            applyEffectsToNode(cloneNode3, [fairBlur]);
-            applyEffectsToNode(cloneNode4, [fairBlur]);
           }
           break;
         default:
