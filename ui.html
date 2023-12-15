@@ -92,44 +92,36 @@
 
 <!-- UI -->
 <div style="position: relative; display: block;">
-
     <div class="slider">
         <input id="range" type="range" min="0" max="300" value="0" oninput="update()" />
         <p id="rangeValue">0</p>
-        <input type="color" id="colorPicker" value="#ffffff" onchange="sendColorToPlugin()" />
-
+        <input type="color" id="colorPicker" value="#ffffff" oninput="sendColorToPlugin()" />
     </div>
+
     <div id="image-container">
         <img id="image" src="image.jpg">
     </div>
-
-    <label for="color-picker">Select a color:</label>
-    <input id="color-picker" type="color">
-
 </div>
-<script>
-    const colorPicker = document.getElementById("color-picker");
-    const image = document.getElementById("image");
 
+<script>
     function update() {
-        var isDragging = false;
-        rangeInput = document.getElementById("range");
+        const rangeInput = document.getElementById("range");
         document.getElementById('rangeValue').innerText = rangeInput.value;
-        slider = document.getElementsByClassName("slider")[0];
+        const colorValue = document.getElementById('colorPicker').value; // Get the color from the color picker
         parent.postMessage({
             pluginMessage: {
+                type: 'value-change', // Ensure the type matches what's expected in code.ts
                 value: rangeInput.value,
-                colorValue: image.value
             }
         }, '*');
     }
 
     function sendColorToPlugin() {
-        var colorValue = document.getElementById('colorPicker').value;
+        const colorValue = document.getElementById('colorPicker');
         parent.postMessage({
             pluginMessage: {
                 type: 'color-change',
-                color: colorValue
+                color: colorValue.value
             }
         }, '*');
     }

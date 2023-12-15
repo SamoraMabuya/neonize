@@ -65,12 +65,46 @@ const cloneAndApplyEffects = (node, effect) => {
     }
     return null;
 };
+function updateDropShadowColor() {
+    figma.currentPage.selection.forEach((selectedNode) => {
+        if (selectedNode.type === "GROUP" &&
+            selectedNode.name === PLUGIN_GROUP_NAME) {
+            // Update all children of the group
+            selectedNode.children.forEach((child) => updateNodeDropShadow(child));
+        }
+        else {
+            // If an individual node is selected, also update its group siblings
+            const parent = selectedNode.parent;
+            if (parent &&
+                parent.type === "GROUP" &&
+                parent.name === PLUGIN_GROUP_NAME) {
+                parent.children.forEach((child) => updateNodeDropShadow(child));
+            }
+            else {
+                updateNodeDropShadow(selectedNode);
+            }
+        }
+    });
+}
+function updateNodeDropShadow(node) {
+    if ("effects" in node) {
+        // Check if the node supports effects
+        let effects = node.effects.map((effect) => {
+            if (effect.type === "DROP_SHADOW") {
+                return Object.assign(Object.assign({}, effect), { color: currentColor }); // Update color of drop shadow effect
+            }
+            return effect; // Leave other effects unchanged
+        });
+        node.effects = effects;
+    }
+}
 figma.ui.onmessage = (messages) => {
+    const { value, color } = messages;
     if (messages.type === "color-change") {
         currentColor = hexToRgb(messages.color);
+        updateDropShadowColor();
     }
-    else if (messages.type === "value-change") {
-        const { value } = messages;
+    if (messages.type === "value-change") {
         const { baseGlow, spreadGlow, fairBlur, intenseBlur } = ApplyShapeGlow(value);
         const ERROR_MESSAGE = "Please use ellipses, rectangles, polygons, or text";
         const ERROR_OPTIONS = {
