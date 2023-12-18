@@ -1,6 +1,6 @@
 "use strict";
 figma.showUI(__html__);
-figma.ui.resize(400, 400);
+figma.ui.resize(400, 100);
 
 const PLUGIN_GROUP_NAME = "PluginTextGlowGroup";
 
