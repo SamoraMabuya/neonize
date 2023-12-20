@@ -122,11 +122,15 @@
     window.onmessage = (event) => {
         const {
             type,
-            value
+            value,
+            color
         } = event.data.pluginMessage;
         if (type === 'update-range-ui') {
             document.getElementById('range').value = value;
             document.getElementById('rangeValue').innerText = value;
+        }
+        if (type === 'update-color-ui') { // New condition to handle color update
+            document.getElementById('colorPicker').value = color;
         }
     };
 
@@ -139,5 +143,23 @@
                 color: colorValue.value
             }
         }, '*');
+        parent.postMessage({
+            pluginMessage: {
+                type: 'save-color-value',
+                color: colorPicker.value
+            }
+        }, '*');
     }
+    window.onload = () => {
+        parent.postMessage({
+            pluginMessage: {
+                type: 'get-saved-range-value'
+            }
+        }, '*');
+        parent.postMessage({
+            pluginMessage: {
+                type: 'get-saved-color-value'
+            }
+        }, '*'); // New line to get color
+    };
 </script>

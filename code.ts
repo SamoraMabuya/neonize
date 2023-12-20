@@ -133,16 +133,19 @@ figma.ui.onmessage = async (msg) => {
     currentColor = hexToRgb(msg.color);
     updateDropShadowColor();
   }
-  // Saving the range value to client storage
-  if (msg.type === "save-range-value") {
-    await figma.clientStorage.setAsync("savedRangeValue", msg.value);
+  if (msg.type === "save-color-value") {
+    await figma.clientStorage.setAsync("savedColorValue", msg.color);
   }
 
-  // Retrieving the saved range value from client storage
-  if (msg.type === "get-saved-range-value") {
-    const savedValue =
-      (await figma.clientStorage.getAsync("savedRangeValue")) || 0;
-    figma.ui.postMessage({ type: "update-range-ui", value: savedValue });
+  // Retrieving the saved color value from client storage
+  if (msg.type === "get-saved-color-value") {
+    const savedColor =
+      (await figma.clientStorage.getAsync("savedColorValue")) || "#ffffff"; // Default to white
+    figma.ui.postMessage({ type: "update-color-ui", color: savedColor });
+
+    // Update the current color with the retrieved value
+    currentColor = hexToRgb(savedColor);
+    updateDropShadowColor(); // Optionally update the drop shadow color immediately
   }
   if (msg.type === "value-change") {
     const { baseGlow, spreadGlow, fairBlur, intenseBlur } =
