@@ -127,13 +127,24 @@ function updateNodeDropShadow(node: SceneNode) {
     node.effects = effects;
   }
 }
-figma.ui.onmessage = (messages) => {
-  const { value, color } = messages;
-  if (messages.type === "color-change") {
-    currentColor = hexToRgb(messages.color);
+figma.ui.onmessage = async (msg) => {
+  const { value, color } = msg;
+  if (msg.type === "color-change") {
+    currentColor = hexToRgb(msg.color);
     updateDropShadowColor();
   }
-  if (messages.type === "value-change") {
+  // Saving the range value to client storage
+  if (msg.type === "save-range-value") {
+    await figma.clientStorage.setAsync("savedRangeValue", msg.value);
+  }
+
+  // Retrieving the saved range value from client storage
+  if (msg.type === "get-saved-range-value") {
+    const savedValue =
+      (await figma.clientStorage.getAsync("savedRangeValue")) || 0;
+    figma.ui.postMessage({ type: "update-range-ui", value: savedValue });
+  }
+  if (msg.type === "value-change") {
     const { baseGlow, spreadGlow, fairBlur, intenseBlur } =
       ApplyShapeGlow(value);
 

@@ -86,8 +86,6 @@
         <p id="rangeValue">0</p>
         <input type="color" id="colorPicker" value="#ffffff" oninput="sendColorToPlugin()" />
     </div>
-
-
 </div>
 
 <script>
@@ -95,13 +93,43 @@
         const rangeInput = document.getElementById("range");
         document.getElementById('rangeValue').innerText = rangeInput.value;
         const colorValue = document.getElementById('colorPicker').value; // Get the color from the color picker
+
         parent.postMessage({
             pluginMessage: {
-                type: 'value-change', // Ensure the type matches what's expected in code.ts
-                value: rangeInput.value,
+                type: 'value-change',
+                value: rangeInput.value
             }
         }, '*');
+
+        parent.postMessage({
+            pluginMessage: {
+                type: 'save-range-value',
+                value: rangeInput.value
+            }
+        }, '*');
+
+
     }
+    // Send message to retrieve the saved range value
+    window.onload = () => {
+        parent.postMessage({
+            pluginMessage: {
+                type: 'get-saved-range-value'
+            }
+        }, '*');
+    };
+
+    window.onmessage = (event) => {
+        const {
+            type,
+            value
+        } = event.data.pluginMessage;
+        if (type === 'update-range-ui') {
+            document.getElementById('range').value = value;
+            document.getElementById('rangeValue').innerText = value;
+        }
+    };
+
 
     function sendColorToPlugin() {
         const colorValue = document.getElementById('colorPicker');

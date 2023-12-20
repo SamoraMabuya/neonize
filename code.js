@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 figma.showUI(__html__);
 figma.ui.resize(400, 100);
 const PLUGIN_GROUP_NAME = "PluginTextGlowGroup";
@@ -98,13 +107,22 @@ function updateNodeDropShadow(node) {
         node.effects = effects;
     }
 }
-figma.ui.onmessage = (messages) => {
-    const { value, color } = messages;
-    if (messages.type === "color-change") {
-        currentColor = hexToRgb(messages.color);
+figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    const { value, color } = msg;
+    if (msg.type === "color-change") {
+        currentColor = hexToRgb(msg.color);
         updateDropShadowColor();
     }
-    if (messages.type === "value-change") {
+    // Saving the range value to client storage
+    if (msg.type === "save-range-value") {
+        yield figma.clientStorage.setAsync("savedRangeValue", msg.value);
+    }
+    // Retrieving the saved range value from client storage
+    if (msg.type === "get-saved-range-value") {
+        const savedValue = (yield figma.clientStorage.getAsync("savedRangeValue")) || 0;
+        figma.ui.postMessage({ type: "update-range-ui", value: savedValue });
+    }
+    if (msg.type === "value-change") {
         const { baseGlow, spreadGlow, fairBlur, intenseBlur } = ApplyShapeGlow(value);
         const ERROR_MESSAGE = "Please use ellipses, rectangles, polygons, or text";
         const ERROR_OPTIONS = {
@@ -188,4 +206,4 @@ figma.ui.onmessage = (messages) => {
             }
         }
     }
-};
+});
