@@ -1,165 +1,185 @@
 <!-- Import Figma Plugin Design System -->
-<link rel="stylesheet" href="../../node_modules/figma-plugin-ds/dist/figma-plugin-ds.css" />
+<link
+  rel="stylesheet"
+  href="../../node_modules/figma-plugin-ds/dist/figma-plugin-ds.css"
+/>
 
 <!-- Custom Styles -->
 <style>
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        /* Align with Figma's font */
-        background: #F7F7F7;
-        /* Neutral background color */
-        margin: 0;
-        padding: 8px;
-        /* Consistent padding */
-    }
-    
-    .slider {
-        background: #FFFFFF;
-        /* Clean white background */
-        border: 1px solid #E5E5E5;
-        /* Subtle border */
-        border-radius: 8px;
-        /* Rounded corners */
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-        /* Soft box shadow */
-        padding: 16px;
-        /* Padding for inner content */
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        /* Space elements evenly */
-    }
-    
-    .slider p {
-        margin: 0;
-        /* Remove default margin */
-        color: #333333;
-        /* Darker text for better readability */
-        font-size: 14px;
-        /* Adjust font size */
-    }
-    
-    .slider input[type="range"] {
-        flex-grow: 1;
-        /* Allow it to take available space */
-        margin: 0 16px;
-        /* Space it from other elements */
-    }
-    
-    .slider input[type="color"] {
-        border: none;
-        /* Remove default border */
-        border-radius: 4px;
-        /* Rounded corners */
-        padding: 4px;
-        /* Padding around color picker */
-        cursor: pointer;
-        /* Cursor indication */
-    }
-    
-    #image-container {
-        margin-top: 20px;
-        /* Space above image container */
-        width: 100%;
-        /* Full width */
-        padding: 8px;
-        /* Padding inside container */
-        background: #FFFFFF;
-        /* White background for contrast */
-        border-radius: 8px;
-        /* Rounded corners */
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-        /* Soft box shadow */
-    }
-    
-    #image {
-        width: '100%';
-        height: fit-content;
-        /* Rounded corners for image */
-    }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      Helvetica, Arial, sans-serif;
+    /* Align with Figma's font */
+    background: #f7f7f7;
+    /* Neutral background color */
+    margin: 0;
+    padding: 8px;
+    /* Consistent padding */
+  }
+
+  .slider {
+    background: #ffffff;
+    /* Clean white background */
+    border: 1px solid #e5e5e5;
+    /* Subtle border */
+    border-radius: 8px;
+    /* Rounded corners */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    /* Soft box shadow */
+    padding: 16px;
+    /* Padding for inner content */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Space elements evenly */
+  }
+
+  .slider p {
+    margin: 0;
+    /* Remove default margin */
+    color: #333333;
+    /* Darker text for better readability */
+    font-size: 14px;
+    /* Adjust font size */
+  }
+
+  .slider input[type='range'] {
+    flex-grow: 1;
+    /* Allow it to take available space */
+    margin: 0 16px;
+    /* Space it from other elements */
+  }
+
+  .slider input[type='color'] {
+    border: none;
+    /* Remove default border */
+    border-radius: 4px;
+    /* Rounded corners */
+    padding: 4px;
+    /* Padding around color picker */
+    cursor: pointer;
+    /* Cursor indication */
+  }
+
+  #image-container {
+    margin-top: 20px;
+    /* Space above image container */
+    width: 100%;
+    /* Full width */
+    padding: 8px;
+    /* Padding inside container */
+    background: #ffffff;
+    /* White background for contrast */
+    border-radius: 8px;
+    /* Rounded corners */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    /* Soft box shadow */
+  }
+
+  #image {
+    width: '100%';
+    height: fit-content;
+    /* Rounded corners for image */
+  }
 </style>
 
 <!-- UI -->
 <div>
-    <div class="slider">
-        <input id="range" type="range" min="0" max="300" value="0" oninput="update()" />
-        <p id="rangeValue">0</p>
-        <input type="color" id="colorPicker" value="#ffffff" oninput="sendColorToPlugin()" />
-    </div>
+  <div class="slider">
+    <input
+      id="range"
+      type="range"
+      min="0"
+      max="300"
+      value="0"
+      oninput="update()"
+    />
+    <p id="rangeValue">0</p>
+    <input
+      type="color"
+      id="colorPicker"
+      value="#ffffff"
+      oninput="sendColorToPlugin()"
+    />
+  </div>
 </div>
 
 <script>
-    function update() {
-        const rangeInput = document.getElementById("range");
-        document.getElementById('rangeValue').innerText = rangeInput.value;
-        const colorValue = document.getElementById('colorPicker').value; // Get the color from the color picker
+  function update() {
+    const rangeInput = document.getElementById('range')
+    document.getElementById('rangeValue').innerText = rangeInput.value
 
-        parent.postMessage({
-            pluginMessage: {
-                type: 'value-change',
-                value: rangeInput.value
-            }
-        }, '*');
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: 'value-change',
+          value: rangeInput.value,
+        },
+      },
+      '*',
+    )
 
-        parent.postMessage({
-            pluginMessage: {
-                type: 'save-range-value',
-                value: rangeInput.value
-            }
-        }, '*');
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: 'save-range-value',
+          value: rangeInput.value,
+        },
+      },
+      '*',
+    )
+  }
 
+  function sendColorToPlugin() {
+    const colorValue = document.getElementById('colorPicker').value
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: 'color-change',
+          color: colorValue,
+        },
+      },
+      '*',
+    )
 
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: 'save-color-value',
+          color: colorValue,
+        },
+      },
+      '*',
+    )
+  }
+
+  window.onload = () => {
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: 'get-saved-range-value',
+        },
+      },
+      '*',
+    )
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: 'get-saved-color-value',
+        },
+      },
+      '*',
+    )
+  }
+
+  window.onmessage = (event) => {
+    const { type, value, color } = event.data.pluginMessage
+    if (type === 'update-range-ui') {
+      document.getElementById('range').value = value
+      document.getElementById('rangeValue').innerText = value
     }
-    // Send message to retrieve the saved range value
-    window.onload = () => {
-        parent.postMessage({
-            pluginMessage: {
-                type: 'get-saved-range-value'
-            }
-        }, '*');
-    };
-
-    window.onmessage = (event) => {
-        const {
-            type,
-            value,
-            color
-        } = event.data.pluginMessage;
-        if (type === 'update-range-ui') {
-            document.getElementById('range').value = value;
-            document.getElementById('rangeValue').innerText = value;
-        }
-        if (type === 'update-color-ui') { // New condition to handle color update
-            document.getElementById('colorPicker').value = color;
-        }
-    };
-
-
-    function sendColorToPlugin() {
-        const colorValue = document.getElementById('colorPicker');
-        parent.postMessage({
-            pluginMessage: {
-                type: 'color-change',
-                color: colorValue.value
-            }
-        }, '*');
-        parent.postMessage({
-            pluginMessage: {
-                type: 'save-color-value',
-                color: colorPicker.value
-            }
-        }, '*');
+    if (type === 'update-color-ui') {
+      document.getElementById('colorPicker').value = color
     }
-    window.onload = () => {
-        parent.postMessage({
-            pluginMessage: {
-                type: 'get-saved-range-value'
-            }
-        }, '*');
-        parent.postMessage({
-            pluginMessage: {
-                type: 'get-saved-color-value'
-            }
-        }, '*'); // New line to get color
-    };
+  }
 </script>
