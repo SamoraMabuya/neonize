@@ -56,6 +56,8 @@ const isNodeType = (node) => {
         node.type === "ELLIPSE" ||
         node.type === "POLYGON" ||
         node.type === "TEXT" ||
+        node.type === "LINE" ||
+        node.type === "STAR" ||
         (node.type === "GROUP" && node.name === PLUGIN_GROUP_NAME));
 };
 const applyEffectsToNode = (node, effects) => {
@@ -74,54 +76,55 @@ function cloneAndApplyEffects(node, effect, cloneCount) {
     }
     return clones;
 }
-function updateDropShadowColor() {
+function applyColorToNodeDropShadow(node, color) {
+    if ("effects" in node) {
+        node.effects = node.effects.map((effect) => {
+            if (effect.type === "DROP_SHADOW") {
+                return Object.assign(Object.assign({}, effect), { color: color });
+            }
+            return effect;
+        });
+    }
+}
+function applyCurrentColorToSelectedNodesDropShadows(currentColor) {
     figma.currentPage.selection.forEach((selectedNode) => {
         if (selectedNode.type === "GROUP" &&
             selectedNode.name === PLUGIN_GROUP_NAME) {
-            // Update all children of the group
-            selectedNode.children.forEach((child) => updateNodeDropShadow(child));
+            selectedNode.children.forEach((child) => {
+                if (isNodeType(child)) {
+                    applyColorToNodeDropShadow(child, currentColor);
+                }
+            });
         }
-        else {
-            // If an individual node is selected, also update its group siblings
-            const parent = selectedNode.parent;
-            if (parent &&
-                parent.type === "GROUP" &&
-                parent.name === PLUGIN_GROUP_NAME) {
-                parent.children.forEach((child) => updateNodeDropShadow(child));
-            }
-            else {
-                updateNodeDropShadow(selectedNode);
-            }
+        else if (isNodeType(selectedNode)) {
+            applyColorToNodeDropShadow(selectedNode, currentColor);
         }
     });
 }
-function updateNodeDropShadow(node) {
-    if ("effects" in node) {
-        // Check if the node supports effects
-        let effects = node.effects.map((effect) => {
-            if (effect.type === "DROP_SHADOW") {
-                return Object.assign(Object.assign({}, effect), { color: currentColor }); // Update color of drop shadow effect
-            }
-            return effect; // Leave other effects unchanged
-        });
-        node.effects = effects;
-    }
-}
+const createColorManager = () => {
+    let currentColor = { r: 1, g: 1, b: 1, a: 1 };
+    return {
+        getCurrentColor: () => currentColor,
+        setCurrentColor: (color) => {
+            currentColor = color;
+            applyCurrentColorToSelectedNodesDropShadows(currentColor);
+        },
+    };
+};
+const colorManager = createColorManager();
 figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         switch (msg.type) {
             case "color-change":
-                currentColor = hexToRgb(msg.color);
-                updateDropShadowColor();
+                colorManager.setCurrentColor(hexToRgb(msg.color));
                 break;
             case "save-color-value":
                 yield figma.clientStorage.setAsync("savedColorValue", msg.color);
                 break;
             case "get-saved-color-value":
                 const savedColor = (yield figma.clientStorage.getAsync("savedColorValue")) || "#ffffff";
+                colorManager.setCurrentColor(hexToRgb(savedColor));
                 figma.ui.postMessage({ type: "update-color-ui", color: savedColor });
-                currentColor = hexToRgb(savedColor);
-                updateDropShadowColor();
                 break;
             case "save-range-value":
                 yield figma.clientStorage.setAsync("savedRangeValue", msg.value);
