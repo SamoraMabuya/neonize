@@ -43,8 +43,21 @@ function ApplyShapeGlow(value: number) {
   };
 }
 
-const shapeValues = ["RECTANGLE", "ELLIPSE", "POLYGON"];
-type NodeTypes = "RECTANGLE" | "ELLIPSE" | "POLYGON";
+const shapeValues = [
+  "RECTANGLE",
+  "ELLIPSE",
+  "POLYGON",
+  "LINE",
+  "STAR",
+  "VECTOR",
+];
+type NodeTypes =
+  | "RECTANGLE"
+  | "ELLIPSE"
+  | "POLYGON"
+  | "LINE"
+  | "STAR"
+  | "VECTOR";
 
 let cloneNode: TextNode;
 let cloneNode2: TextNode;
@@ -52,7 +65,9 @@ let cloneNode3: TextNode;
 let cloneNode4: TextNode;
 
 const isValidShapeType = (nodeType: string): nodeType is NodeTypes => {
-  return ["RECTANGLE", "ELLIPSE", "POLYGON"].includes(nodeType);
+  return ["RECTANGLE", "ELLIPSE", "POLYGON", "LINE", "STAR", "VECTOR"].includes(
+    nodeType
+  );
 };
 
 type NodeTypeings =
@@ -60,6 +75,9 @@ type NodeTypeings =
   | EllipseNode
   | PolygonNode
   | TextNode
+  | LineNode
+  | StarNode
+  | VectorNode
   | GroupNode;
 type Effects = DropShadowEffect | InnerShadowEffect | BlurEffect;
 
@@ -71,6 +89,7 @@ const isNodeType = (node: SceneNode): node is NodeTypeings => {
     node.type === "TEXT" ||
     node.type === "LINE" ||
     node.type === "STAR" ||
+    node.type === "VECTOR" ||
     (node.type === "GROUP" && node.name === PLUGIN_GROUP_NAME)
   );
 };
@@ -98,52 +117,50 @@ function cloneAndApplyEffects(
   return clones;
 }
 
-function applyColorToNodeDropShadow(node: NodeTypeings, color: RGBA) {
-  if ("effects" in node) {
-    node.effects = node.effects.map((effect) => {
-      if (effect.type === "DROP_SHADOW") {
-        return { ...effect, color: color };
-      }
-      return effect;
-    });
-  }
-}
-function applyCurrentColorToSelectedNodesDropShadows(currentColor: RGBA) {
+function updateDropShadowColor() {
   figma.currentPage.selection.forEach((selectedNode) => {
     if (
       selectedNode.type === "GROUP" &&
       selectedNode.name === PLUGIN_GROUP_NAME
     ) {
-      selectedNode.children.forEach((child) => {
-        if (isNodeType(child)) {
-          applyColorToNodeDropShadow(child, currentColor);
-        }
-      });
-    } else if (isNodeType(selectedNode)) {
-      applyColorToNodeDropShadow(selectedNode, currentColor);
+      // Update all children of the group
+      selectedNode.children.forEach((child) => updateNodeDropShadow(child));
+    } else {
+      // If an individual node is selected, also update its group siblings
+      const parent = selectedNode.parent;
+      if (
+        parent &&
+        parent.type === "GROUP" &&
+        parent.name === PLUGIN_GROUP_NAME
+      ) {
+        parent.children.forEach((child) => updateNodeDropShadow(child));
+      } else {
+        updateNodeDropShadow(selectedNode);
+      }
     }
   });
 }
 
-const createColorManager = () => {
-  let currentColor: RGBA = { r: 1, g: 1, b: 1, a: 1 };
+function updateNodeDropShadow(node: SceneNode) {
+  if ("effects" in node) {
+    // Check if the node supports effects
+    let effects = node.effects.map((effect) => {
+      if (effect.type === "DROP_SHADOW") {
+        return { ...effect, color: currentColor }; // Update color of drop shadow effect
+      }
+      return effect; // Leave other effects unchanged
+    });
 
-  return {
-    getCurrentColor: () => currentColor,
-    setCurrentColor: (color: RGBA) => {
-      currentColor = color;
-      applyCurrentColorToSelectedNodesDropShadows(currentColor);
-    },
-  };
-};
-
-const colorManager = createColorManager();
+    node.effects = effects;
+  }
+}
 
 figma.ui.onmessage = async (msg) => {
   try {
     switch (msg.type) {
       case "color-change":
-        colorManager.setCurrentColor(hexToRgb(msg.color));
+        currentColor = hexToRgb(msg.color);
+        updateDropShadowColor();
         break;
 
       case "save-color-value":
@@ -153,8 +170,9 @@ figma.ui.onmessage = async (msg) => {
       case "get-saved-color-value":
         const savedColor =
           (await figma.clientStorage.getAsync("savedColorValue")) || "#ffffff";
-        colorManager.setCurrentColor(hexToRgb(savedColor));
         figma.ui.postMessage({ type: "update-color-ui", color: savedColor });
+        currentColor = hexToRgb(savedColor);
+        updateDropShadowColor();
         break;
 
       case "save-range-value":
@@ -172,16 +190,9 @@ figma.ui.onmessage = async (msg) => {
           msg.value
         );
 
-        const ERROR_MESSAGE =
-          "Please use ellipses, rectangles, polygons, or text";
-        const ERROR_OPTIONS = {
-          timeout: 400,
-          error: true,
-          button: { text: "Dismiss", action: () => true },
-        };
-
         for (const node of figma.currentPage.selection) {
           if (isNodeType(node)) {
+            // Handle GROUP nodes that are part of the plugin
             if (node.type === "GROUP" && node.name === PLUGIN_GROUP_NAME) {
               node.children.forEach((child) => {
                 if (child.type === "TEXT") {
@@ -190,10 +201,7 @@ figma.ui.onmessage = async (msg) => {
               });
             } else {
               const shapeType = isValidShapeType(node.type);
-              if (shapeType) {
-                applyEffectsToNode(node, [baseGlow, spreadGlow]);
-              } else if (node.type === "TEXT") {
-                // Check if the node is part of a plugin-created group or has clones
+              if (shapeType || node.type === "TEXT") {
                 const isPartOfPluginGroup =
                   node.parent &&
                   node.parent.type === "GROUP" &&
@@ -201,7 +209,13 @@ figma.ui.onmessage = async (msg) => {
                 const hasClones = node.getPluginData("hasClones") === "true";
 
                 if (!isPartOfPluginGroup && !hasClones) {
-                  const cloneNodes = cloneAndApplyEffects(node, fairBlur, 4);
+                  const effectsToApply =
+                    node.type === "TEXT" ? [fairBlur] : [baseGlow, spreadGlow];
+                  const cloneNodes = cloneAndApplyEffects(
+                    node,
+                    effectsToApply[0],
+                    4
+                  );
                   if (cloneNodes.length === 4) {
                     const group = figma.group(
                       [node, ...cloneNodes],
@@ -214,15 +228,17 @@ figma.ui.onmessage = async (msg) => {
                       group.insertChild(index + 1, clone);
                     });
 
-                    node.strokes = [
-                      {
-                        type: "SOLID",
-                        color: { r: 1, g: 1, b: 1 },
-                        visible: true,
-                        opacity: 1,
-                        blendMode: "NORMAL",
-                      },
-                    ];
+                    if (node.type === "TEXT") {
+                      node.strokes = [
+                        {
+                          type: "SOLID",
+                          color: { r: 1, g: 1, b: 1 },
+                          visible: true,
+                          opacity: 1,
+                          blendMode: "NORMAL",
+                        },
+                      ];
+                    }
                     node.setPluginData("hasClones", "true");
                   }
                 } else if (isPartOfPluginGroup) {
