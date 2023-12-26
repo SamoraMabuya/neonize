@@ -1,0 +1,23 @@
+# Node modules and dependencies
+node_modules/
+
+# Editor settings
+.vscode/
+
+# Build output
+# Uncomment the next line if you have a build output directory
+# dist/
+
+# Operating System generated files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Uncomment if you compile TypeScript to JavaScript and want to ignore the output file
+# code.js
+
+# Other files that are generated or not necessary to be tracked
+# Add any other files or directories that you generate or don't want to track
