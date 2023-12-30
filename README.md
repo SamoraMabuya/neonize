@@ -1,40 +1,49 @@
-Below are the steps to get your plugin running. You can also find instructions at:
+# Neonize
 
-  https://www.figma.com/plugin-docs/plugin-quickstart-guide/
+## Introduction
 
-This plugin template uses Typescript and NPM, two standard tools in creating JavaScript applications.
+**Neonize** is a dynamic Figma plugin designed to enhance the user experience through interactive color and size adjustments. It allows designers to easily modify and visualize elements within their Figma projects, offering an intuitive and user-friendly interface.
 
-First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
-libraries. You can find the download link here:
+## Features
 
-  https://nodejs.org/en/download/
+- **Interactive Sliders**: Adjust the size and color of elements in real-time.
+- **Customizable UI**: Offers a tailored experience with flexible UI elements.
+- **Seamless Integration**: Works smoothly within the Figma environment.
 
-Next, install TypeScript using the command:
+## Getting Started
 
-  npm install -g typescript
+1. **Installation**: Install Neonize directly from the Figma plugin store: [Neonize on Figma](https://www.figma.com/community/plugin/1300043926906272268/neonize).
+2. **Basic Usage**: After installation, access Neonize in the Figma plugins section to start modifying your designs.
 
-Finally, in the directory of your plugin, get the latest type definitions for the plugin API by running:
+## Installation for Developers
 
-  npm install --save-dev @figma/plugin-typings
+- **Prerequisites**: Ensure Node.js and npm are installed. [Node.js Download](https://nodejs.org/en/download/).
+- **Install TypeScript**: Run `npm install -g typescript` in your terminal.
+- **Figma Plugin Typings**: Run `npm install --save-dev @figma/plugin-typings` in your plugin directory.
+- **Compilation**: Use Visual Studio Code to compile TypeScript to JavaScript. Select "npm: watch" in the "Terminal > Run Build Task..." menu.
 
-If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
-is already valid Typescript code.
+## Documentation
 
-TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
-to provide information about the Figma API while you are writing code, as well as help catch bugs
-you previously didn't notice.
+Refer to the [official Figma plugin documentation](https://www.figma.com/plugin-docs/plugin-quickstart-guide/) for detailed guidance on plugin development and usage.
 
-For more information, visit https://www.typescriptlang.org/
+## Contributing
 
-Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
-for the browser to run.
+Contributions to improve Neonize are welcome. Please follow our contributing guidelines detailed in our GitHub repository: [Neonize on GitHub](https://github.com/SamoraMabuya/neonize).
 
-We recommend writing TypeScript code using Visual Studio code:
+## Support and Community
 
-1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
-2. Open this directory in Visual Studio Code.
-3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
-    then select "npm: watch". You will have to do this again every time
-    you reopen Visual Studio Code.
+For support, questions, or to join our community:
+- **Troubleshooting and Discussions**: Visit our [GitHub Issues](https://github.com/SamoraMabuya/neonize/issues).
+- **Community Engagement**: Join discussions in the Figma Community plugin page.
 
-That's it! Visual Studio Code will regenerate the JavaScript file every time you save.
+## Updates and Changelog
+
+Keep an eye on our GitHub repository for the latest updates and changes.
+
+## About the Author
+
+Neonize is developed by Samora Mabuya, a passionate designer and developer focused on creating intuitive and innovative tools for designers.
+
+## License
+
+Neonize is released under the MIT License. See the LICENSE file in the GitHub repository for more details.
