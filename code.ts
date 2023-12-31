@@ -21,16 +21,14 @@ let currentColor: RGBA = { r: 1, g: 1, b: 1, a: 1 }; // Default color
 function createDropShadowEffects(value: number): DropShadowEffect[] {
   const effects: DropShadowEffect[] = [];
   const baseMultiplier = value * 0.2;
-  const spreadMultiplier = value * 0.6;
 
-  // Adjust these properties to match the desired effects based on your Figma file
   for (let i = 0; i < 5; i++) {
     effects.push({
       type: "DROP_SHADOW",
       color: currentColor,
       offset: { x: 0, y: 0 },
-      radius: baseMultiplier + i * 10, // Example: incrementing radius
-      spread: spreadMultiplier + i * 2, // Example: incrementing spread
+      radius: baseMultiplier + i * 10,
+      spread: 0,
       visible: true,
       blendMode: "NORMAL",
       showShadowBehindNode: false,
