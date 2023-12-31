@@ -18,36 +18,27 @@ function hexToRgb(hex: string): RGBA {
 
 let currentColor: RGBA = { r: 1, g: 1, b: 1, a: 1 }; // Default color
 
-const defaultDropShadowEffect = (
-  radiusMultiplier: number,
-  spread: number
-): DropShadowEffect => ({
-  type: "DROP_SHADOW",
-  color: currentColor,
-  offset: { x: 0, y: 0 },
-  radius: radiusMultiplier,
-  spread: spread,
-  visible: true,
-  blendMode: "NORMAL",
-  showShadowBehindNode: false,
-});
-
-function applyGlow(value: number) {
+function createDropShadowEffects(value: number): DropShadowEffect[] {
+  const effects: DropShadowEffect[] = [];
   const baseMultiplier = value * 0.2;
   const spreadMultiplier = value * 0.6;
 
-  return {
-    baseGlow: defaultDropShadowEffect(baseMultiplier, 0),
-    spreadGlow: defaultDropShadowEffect(spreadMultiplier, 4),
-    intenseBlur: defaultDropShadowEffect(baseMultiplier, 0),
-    fairBlur: defaultDropShadowEffect(spreadMultiplier, 0),
-  };
-}
+  // Adjust these properties to match the desired effects based on your Figma file
+  for (let i = 0; i < 5; i++) {
+    effects.push({
+      type: "DROP_SHADOW",
+      color: currentColor,
+      offset: { x: 0, y: 0 },
+      radius: baseMultiplier + i * 10, // Example: incrementing radius
+      spread: spreadMultiplier + i * 2, // Example: incrementing spread
+      visible: true,
+      blendMode: "NORMAL",
+      showShadowBehindNode: false,
+    });
+  }
 
-const isValidShapeType = (nodeType: string) =>
-  ["RECTANGLE", "ELLIPSE", "POLYGON", "LINE", "STAR", "VECTOR"].includes(
-    nodeType
-  );
+  return effects;
+}
 
 type ValidNodeType =
   | RectangleNode
@@ -58,57 +49,23 @@ type ValidNodeType =
   | StarNode
   | VectorNode
   | GroupNode;
-type Effects = DropShadowEffect | InnerShadowEffect | BlurEffect;
-type GlowEffects = {
-  baseGlow: DropShadowEffect;
-  spreadGlow: DropShadowEffect;
-  fairBlur: DropShadowEffect;
-  intenseBlur: DropShadowEffect;
-};
 
-const isNodeType = (node: SceneNode): node is ValidNodeType => {
-  return (
-    isValidShapeType(node.type) ||
-    node.type === "TEXT" ||
-    (node.type === "GROUP" && node.name === PLUGIN_GROUP_NAME)
-  );
-};
+const isNodeType = (node: SceneNode): node is ValidNodeType =>
+  [
+    "RECTANGLE",
+    "ELLIPSE",
+    "POLYGON",
+    "LINE",
+    "STAR",
+    "VECTOR",
+    "TEXT",
+    "GROUP",
+  ].includes(node.type);
 
-const applyEffectsToNode = (node: ValidNodeType, effects: Effects[]) => {
-  if (!node) return;
-  node.effects = effects;
-};
-
-function cloneAndApplyEffects(
-  node: SceneNode,
-  effect: Effects,
-  cloneCount: number
-): SceneNode[] {
-  let clones: SceneNode[] = [];
-
-  for (let i = 0; i < cloneCount; i++) {
-    const clone = node.clone();
-    if (isNodeType(clone)) {
-      applyEffectsToNode(clone as ValidNodeType, [effect]);
-      clones.push(clone);
-    }
+function applyEffectsToNode(node: ValidNodeType, effects: DropShadowEffect[]) {
+  if (node) {
+    node.effects = effects;
   }
-
-  return clones;
-}
-
-function updateDropShadowColor() {
-  figma.currentPage.selection.forEach((selectedNode) => {
-    if (isNodeType(selectedNode) && selectedNode.type === "GROUP") {
-      selectedNode.children.forEach((child) => {
-        if (isNodeType(child)) {
-          updateNodeDropShadow(child as ValidNodeType);
-        }
-      });
-    } else {
-      updateNodeDropShadow(selectedNode as ValidNodeType);
-    }
-  });
 }
 
 function updateNodeDropShadow(node: ValidNodeType) {
@@ -122,89 +79,16 @@ function updateNodeDropShadow(node: ValidNodeType) {
   }
 }
 
-function applyEffectsToGroupChildren(
-  group: GroupNode,
-  glowEffects: GlowEffects
-) {
-  group.children.forEach((child, index) => {
-    if (!isNodeType(child)) return;
-
-    if (child.name === "original") {
-      child.effects = []; // Remove effects from the original node
-    } else {
-      let effect;
-      if (child.type === "TEXT") {
-        effect = index < 2 ? glowEffects.fairBlur : glowEffects.intenseBlur;
-      } else {
-        effect = glowEffects.baseGlow; // Apply baseGlow to both Clone 1 and Clone 2
-      }
-      applyEffectsToNode(child as ValidNodeType, [effect]);
-    }
-  });
-}
-
-function createAndApplyEffectsToClones(
-  node: SceneNode,
-  glowEffects: GlowEffects
-) {
-  const cloneNodes = cloneAndApplyEffects(node, glowEffects.baseGlow, 4);
-
-  if (cloneNodes.length !== 4) return;
-
-  node.name = "original";
-  const group = figma.group([...cloneNodes, node], figma.currentPage);
-  group.name = PLUGIN_GROUP_NAME;
-
-  // Set positions and names for clones before reversing
-  cloneNodes.forEach((clone, index) => {
-    clone.name = `clone${index + 1}`;
-    clone.x = node.x;
-    clone.y = node.y;
-  });
-
-  // Apply effects to clones
-  cloneNodes.forEach((clone, index) => {
-    let effect;
-    if (node.type === "TEXT") {
-      effect = index < 2 ? glowEffects.fairBlur : glowEffects.intenseBlur;
-    } else {
-      effect = index < 2 ? glowEffects.baseGlow : glowEffects.spreadGlow;
-    }
-    applyEffectsToNode(clone as ValidNodeType, [effect]);
-  });
-
-  reverseChildrenOrder(group);
-
-  if (node.type === "TEXT") {
-    node.strokes = [
-      {
-        type: "SOLID",
-        color: { r: 1, g: 1, b: 1 },
-        visible: true,
-        opacity: 1,
-        blendMode: "NORMAL",
-      },
-    ];
-  }
-  node.setPluginData("hasClones", "true");
-}
-
-function reverseChildrenOrder(group: GroupNode) {
-  for (let i = group.children.length - 1; i >= 0; i--) {
-    const child = group.children[i];
-    group.appendChild(child);
-  }
-}
 const ERROR_MESSAGE = "Please use shapes or text";
 const ERROR_OPTIONS = {
   timeout: 400,
   error: true,
-
   button: {
     text: "Dismiss",
-    action: () => {}, // Empty function, the notification will close on click
+    action: () => {},
   },
 };
+
 figma.ui.onmessage = async (msg) => {
   switch (msg.type) {
     case "color-change":
@@ -233,32 +117,24 @@ figma.ui.onmessage = async (msg) => {
       figma.ui.postMessage({ type: "update-range-ui", value: savedValue });
       break;
     case "value-change":
-      const glowEffects = applyGlow(msg.value);
+      const glowEffects = createDropShadowEffects(msg.value);
       if (!figma.currentPage.selection.every(isNodeType)) {
         figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
         return;
       }
       figma.currentPage.selection.forEach((node) => {
         if (isNodeType(node)) {
-          let targetGroup: GroupNode | null = null;
-
-          if (node.type === "GROUP" && node.name === PLUGIN_GROUP_NAME) {
-            targetGroup = node as GroupNode;
-          } else if (
-            node.parent &&
-            node.parent.type === "GROUP" &&
-            node.parent.name === PLUGIN_GROUP_NAME
-          ) {
-            targetGroup = node.parent as GroupNode;
-          }
-
-          if (targetGroup) {
-            applyEffectsToGroupChildren(targetGroup, glowEffects);
-          } else if (node.getPluginData("hasClones") !== "true") {
-            createAndApplyEffectsToClones(node, glowEffects);
-          }
+          applyEffectsToNode(node, glowEffects);
         }
       });
       break;
   }
 };
+
+function updateDropShadowColor() {
+  figma.currentPage.selection.forEach((selectedNode) => {
+    if (isNodeType(selectedNode)) {
+      updateNodeDropShadow(selectedNode);
+    }
+  });
+}
