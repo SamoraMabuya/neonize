@@ -1,157 +1,177 @@
 <!-- Import Figma Plugin Design System -->
-<link rel="stylesheet" href="../../node_modules/figma-plugin-ds/dist/figma-plugin-ds.css" />
+<link
+  rel="stylesheet"
+  href="../../node_modules/figma-plugin-ds/dist/figma-plugin-ds.css"
+/>
 
 <!-- Custom Styles -->
 <style>
-    /* Block: slider */
-    
-    .slider {
-        background: #ffffff;
-        border: 1px solid #e5e5e5;
-        border-radius: 8px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-        padding: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    /* Element: slider's range input */
-    
-    .slider__input--range {
-        flex-grow: 1;
-        margin: 0 16px;
-    }
-    /* Element: slider's color input */
-    
-    .slider__input--color {
-        border: none;
-        border-radius: 4px;
-        padding: 4px;
-        cursor: pointer;
-    }
-    /* Element: slider's text */
-    
-    .slider__text {
-        margin: 0;
-        color: #333333;
-        font-size: 14px;
-    }
-    /* Block: image-container */
-    
-    .image-container {
-        margin-top: 20px;
-        width: 100%;
-        padding: 8px;
-        background: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    }
-    /* Element: image inside image-container */
-    
-    .image-container__image {
-        width: 100%;
-        height: fit-content;
-    }
+  /* Block: slider */
+
+  .slider {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  /* Element: slider's range input */
+
+  .slider__input--range {
+    flex-grow: 1;
+    margin: 0 16px;
+  }
+  /* Element: slider's color input */
+
+  .slider__input--color {
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    cursor: pointer;
+  }
+  /* Element: slider's text */
+
+  .slider__text {
+    margin: 0;
+    color: #333333;
+    font-size: 14px;
+  }
+  /* Block: image-container */
+
+  .image-container {
+    margin-top: 20px;
+    width: 100%;
+    padding: 8px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+  /* Element: image inside image-container */
+
+  .image-container__image {
+    width: 100%;
+    height: fit-content;
+  }
 </style>
 
 <div>
-    <div class="slider">
-        <input id="range" class="slider__input slider__input--range" type="range" min="0" max="300" value="0" />
-        <p id="rangeValue" class="slider__text">0</p>
+  <div class="slider">
+    <input
+      id="range"
+      class="slider__input slider__input--range"
+      type="range"
+      min="0"
+      max="100"
+      value="0"
+    />
+    <p id="rangeValue" class="slider__text">0</p>
 
-        <input id="colorPicker" class="slider__input slider__input--color" type="color" value="#ffffff" />
-    </div>
+    <input
+      id="colorPicker"
+      class="slider__input slider__input--color"
+      type="color"
+      value="#ffffff"
+    />
+  </div>
 
-    <div id="image-container" class="image-container"></div>
+  <div id="image-container" class="image-container"></div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const rangeInput = document.getElementById('range')
-            const colorPicker = document.getElementById('colorPicker')
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const rangeInput = document.getElementById('range')
+      const colorPicker = document.getElementById('colorPicker')
 
-            rangeInput.addEventListener('input', update)
-            colorPicker.addEventListener('input', sendColorToPlugin)
-        })
+      rangeInput.addEventListener('input', update)
+      colorPicker.addEventListener('input', sendColorToPlugin)
+    })
 
-        function update() {
-            const rangeInput = document.getElementById('range')
-            document.getElementById('rangeValue').innerText = rangeInput.value
+    function update() {
+      const rangeInput = document.getElementById('range')
+      document.getElementById('rangeValue').innerText = rangeInput.value
 
-            parent.postMessage({
-                    pluginMessage: {
-                        type: 'value-change',
-                        value: rangeInput.value,
-                    },
-                },
-                '*',
-            )
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: 'value-change',
+            value: rangeInput.value,
+          },
+        },
+        '*',
+      )
 
-            parent.postMessage({
-                    pluginMessage: {
-                        type: 'save-range-value',
-                        value: rangeInput.value,
-                    },
-                },
-                '*',
-            )
-        }
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: 'save-range-value',
+            value: rangeInput.value,
+          },
+        },
+        '*',
+      )
+    }
 
-        function sendColorToPlugin() {
-            const colorValue = document.getElementById('colorPicker').value
-            parent.postMessage({
-                    pluginMessage: {
-                        type: 'color-change',
-                        color: colorValue,
-                    },
-                },
-                '*',
-            )
+    function sendColorToPlugin() {
+      const colorValue = document.getElementById('colorPicker').value
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: 'color-change',
+            color: colorValue,
+          },
+        },
+        '*',
+      )
 
-            parent.postMessage({
-                    pluginMessage: {
-                        type: 'save-color-value',
-                        color: colorValue,
-                    },
-                },
-                '*',
-            )
-        }
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: 'save-color-value',
+            color: colorValue,
+          },
+        },
+        '*',
+      )
+    }
 
-        window.onload = () => {
-            parent.postMessage({
-                    pluginMessage: {
-                        type: 'get-saved-range-value',
-                    },
-                },
-                '*',
-            )
-            parent.postMessage({
-                    pluginMessage: {
-                        type: 'get-saved-color-value',
-                    },
-                },
-                '*',
-            )
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'ui-ready'
-                }
-            }, '*')
-        }
+    window.onload = () => {
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: 'get-saved-range-value',
+          },
+        },
+        '*',
+      )
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: 'get-saved-color-value',
+          },
+        },
+        '*',
+      )
+      parent.postMessage(
+        {
+          pluginMessage: {
+            type: 'ui-ready',
+          },
+        },
+        '*',
+      )
+    }
 
-        window.onmessage = (event) => {
-            const {
-                type,
-                value,
-                color
-            } = event.data.pluginMessage
-            if (type === 'update-range-ui') {
-                document.getElementById('range').value = value
-                document.getElementById('rangeValue').innerText = value
-            }
-            if (type === 'update-color-ui') {
-                document.getElementById('colorPicker').value = color
-            }
-        }
-    </script>
+    window.onmessage = (event) => {
+      const { type, value, color } = event.data.pluginMessage
+      if (type === 'update-range-ui') {
+        document.getElementById('range').value = value
+        document.getElementById('rangeValue').innerText = value
+      }
+      if (type === 'update-color-ui') {
+        document.getElementById('colorPicker').value = color
+      }
+    }
+  </script>
 </div>
