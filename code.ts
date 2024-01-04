@@ -1,7 +1,7 @@
 "use strict";
 
 figma.showUI(__html__);
-figma.ui.resize(400, 100);
+figma.ui.resize(400, 80);
 
 function hexToRgb(hex: string): RGBA {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
