@@ -1,8 +1,7 @@
 "use strict";
+
 figma.showUI(__html__);
 figma.ui.resize(400, 100);
-
-const PLUGIN_GROUP_NAME = "Neonize";
 
 function hexToRgb(hex: string): RGBA {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -45,8 +44,7 @@ type ValidNodeType =
   | TextNode
   | LineNode
   | StarNode
-  | VectorNode
-  | GroupNode;
+  | VectorNode;
 
 const isNodeType = (node: SceneNode): node is ValidNodeType =>
   [
@@ -57,7 +55,6 @@ const isNodeType = (node: SceneNode): node is ValidNodeType =>
     "STAR",
     "VECTOR",
     "TEXT",
-    "GROUP",
   ].includes(node.type);
 
 function applyEffectsToNode(node: ValidNodeType, effects: DropShadowEffect[]) {
@@ -87,8 +84,61 @@ const ERROR_OPTIONS = {
   },
 };
 
+function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (c: number) =>
+    Math.round(c * 255)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function reselectCurrentNode() {
+  const currentSelection = figma.currentPage.selection;
+
+  if (currentSelection.length > 0) {
+    figma.currentPage.selection = [];
+
+    setTimeout(() => {
+      figma.currentPage.selection = currentSelection;
+    }, 100);
+  }
+}
+
+function updateUIColorFromSelection() {
+  const selectedNodes = figma.currentPage.selection;
+  if (selectedNodes.length > 0 && isNodeType(selectedNodes[0])) {
+    const shapeNode = selectedNodes[0];
+    const fills = shapeNode.fills as ReadonlyArray<Paint>;
+    if (fills.length > 0 && fills[0].type === "SOLID") {
+      const solidFill = fills[0] as SolidPaint;
+      const color = solidFill.color;
+      const hexColor = rgbToHex(color.r, color.g, color.b);
+      currentColor = {
+        r: color.r,
+        g: color.g,
+        b: color.b,
+        a: solidFill.opacity || 1,
+      };
+      figma.ui.postMessage({ type: "update-color-ui", color: hexColor });
+    }
+  }
+}
+
+figma.on("run", () => {
+  reselectCurrentNode();
+});
+// selectionchange listener
+figma.on("selectionchange", () => {
+  updateUIColorFromSelection();
+});
 figma.ui.onmessage = async (msg) => {
   switch (msg.type) {
+    case "ui-ready":
+      // Called when the UI is ready; initialize with the selected node color
+      updateUIColorFromSelection();
+
+      break;
+
     case "color-change":
       currentColor = hexToRgb(msg.color);
       updateDropShadowColor();
