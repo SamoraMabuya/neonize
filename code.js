@@ -39,9 +39,11 @@ const isNodeType = (node) => [
     "VECTOR",
     "TEXT",
 ].includes(node.type);
-function applyEffectsToNode(node, effects) {
+function applyEffectsToNode(node, effects, rangeValue) {
     if (node) {
         node.effects = effects;
+        node.setPluginData("enhanced", "true");
+        node.setPluginData("rangeValue", rangeValue.toString());
     }
 }
 function updateNodeDropShadow(node) {
@@ -97,6 +99,26 @@ function updateUIColorFromSelection() {
 figma.on("run", () => {
     reselectCurrentNode();
 });
+figma.on("selectionchange", () => {
+    const selectedNodes = figma.currentPage.selection;
+    if (selectedNodes.length > 0 && isNodeType(selectedNodes[0])) {
+        const node = selectedNodes[0];
+        const enhanced = node.getPluginData("enhanced");
+        if (enhanced) {
+            const rangeValue = node.getPluginData("rangeValue");
+            // Post message to UI to update range slider
+            figma.ui.postMessage({ type: "update-range-ui", value: rangeValue });
+        }
+        else {
+            // Post message to UI to reset range slider
+            figma.ui.postMessage({ type: "reset-range-ui" });
+        }
+    }
+    else {
+        // Post message to UI to reset range slider
+        figma.ui.postMessage({ type: "reset-range-ui" });
+    }
+});
 // selectionchange listener
 figma.on("selectionchange", () => {
     updateUIColorFromSelection();
@@ -135,7 +157,7 @@ figma.ui.onmessage = async (msg) => {
             }
             figma.currentPage.selection.forEach((node) => {
                 if (isNodeType(node)) {
-                    applyEffectsToNode(node, glowEffects);
+                    applyEffectsToNode(node, glowEffects, msg.value);
                 }
             });
             break;
