@@ -1,6 +1,49 @@
 "use strict";
 figma.showUI(__html__);
-figma.ui.resize(400, 80);
+figma.ui.resize(400, 220);
+function createAndGroupDuplicates(node) {
+    if (!node.parent) {
+        figma.notify("Cannot group nodes: the selected node has no parent.");
+        return null;
+    }
+    const duplicates = [];
+    for (let i = 0; i < 4; i++) {
+        const duplicate = node.clone();
+        duplicate.name = `spread ${4 - i}`; // Naming the duplicates in reverse order
+        if ("absoluteTransform" in node.parent) {
+            duplicate.x = node.x + node.parent.absoluteTransform[0][2];
+            duplicate.y = node.y + node.parent.absoluteTransform[1][2];
+        }
+        else {
+            duplicate.x = node.x;
+            duplicate.y = node.y;
+        }
+        duplicates.unshift(duplicate); // Add to the beginning of the array
+    }
+    // Rename the original node
+    node.name = "Original";
+    // Group the original node with its duplicates, with original on top
+    const allNodes = [...duplicates, node]; // Original node first, then duplicates in reverse order
+    const group = figma.group(allNodes, node.parent);
+    group.appendChild(node);
+    group.name = "Neonize Group";
+    node.setPluginData("isNeonized", "true");
+    return group;
+}
+function applyLayerBlurToGroup(group, blurValue) {
+    group.children.forEach((child) => {
+        // Apply blur only to duplicates, not the original node
+        // Check if the child is of a type that can have effects
+        if ("effects" in child && child.getPluginData("isNeonized") !== "true") {
+            const blurEffect = {
+                type: "LAYER_BLUR",
+                radius: blurValue * 10,
+                visible: true,
+            };
+            child.effects = [blurEffect];
+        }
+    });
+}
 function hexToRgb(hex) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
@@ -119,6 +162,28 @@ figma.on("selectionchange", () => {
         figma.ui.postMessage({ type: "reset-range-ui" });
     }
 });
+function findNeonizeGroupForNode(node) {
+    let currentNode = node;
+    while (currentNode) {
+        if (currentNode.type === "GROUP" && currentNode.name === "Neonize Group") {
+            return currentNode;
+        }
+        currentNode = currentNode.parent;
+    }
+    return null;
+}
+function findGroupWithOriginalNode(node) {
+    let currentNode = node;
+    while (currentNode) {
+        if (currentNode.getPluginData("isNeonized") === "true" &&
+            currentNode.type === "GROUP") {
+            return currentNode;
+        }
+        currentNode = currentNode.parent;
+    }
+    return null;
+}
+// Updated to check all parent nodes for an existing "Neonize Group"
 // selectionchange listener
 figma.on("selectionchange", () => {
     updateUIColorFromSelection();
@@ -160,6 +225,28 @@ figma.ui.onmessage = async (msg) => {
                     applyEffectsToNode(node, glowEffects, msg.value);
                 }
             });
+            break;
+        case "size-change":
+            const blurValue = parseInt(msg.value);
+            const selectedNodes = figma.currentPage.selection;
+            if (selectedNodes.length === 0) {
+                figma.notify("Please select a node");
+                break;
+            }
+            const selectedNode = selectedNodes[0];
+            let group = findNeonizeGroupForNode(selectedNode);
+            // Check if the node or any of its parents have been neonized
+            if (selectedNode.getPluginData("isNeonized") === "true" || group) {
+                group = group || findGroupWithOriginalNode(selectedNode);
+            }
+            else if (isNodeType(selectedNode)) {
+                group = createAndGroupDuplicates(selectedNode);
+            }
+            if (!group) {
+                figma.notify("Cannot find or create a Neonize Group");
+                break;
+            }
+            applyLayerBlurToGroup(group, blurValue);
             break;
     }
 };
