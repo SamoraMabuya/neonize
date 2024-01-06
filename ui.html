@@ -139,149 +139,37 @@
     document.addEventListener('DOMContentLoaded', () => {
       const intensityInput = document.getElementById('intensity')
       const spreadInput = document.getElementById('spread')
-      const colorPicker = document.getElementById('colorPicker')
-
-      intensityInput.addEventListener('input', () => {
-        const intensityValue = intensityInput.value
-        document.getElementById('intensityValue').innerText = intensityValue
-        parent.postMessage(
-          {
-            pluginMessage: {
-              type: 'value-change',
-              value: intensityValue,
-            },
-          },
-          '*',
-        )
-      })
-
-      spreadInput.addEventListener('input', () => {
-        const spreadValue = spreadInput.value
-        document.getElementById('spreadValue').innerText = spreadValue
-        parent.postMessage(
-          {
-            pluginMessage: {
-              type: 'size-change',
-              value: spreadValue,
-            },
-          },
-          '*',
-        )
-      })
-
-      colorPicker.addEventListener('input', sendColorToPlugin)
-    })
-
-    function sendColorToPlugin() {
-      const colorValue = document.getElementById('colorPicker').value
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: 'color-change',
-            color: colorValue,
-          },
-        },
-        '*',
-      )
-    }
-
-    window.onload = () => {
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: 'get-saved-range-value',
-          },
-        },
-        '*',
-      )
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: 'get-saved-color-value',
-          },
-        },
-        '*',
-      )
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: 'ui-ready',
-          },
-        },
-        '*',
-      )
-    }
-
-    window.onmessage = (event) => {
-      const { type, value, color } = event.data.pluginMessage
-
-      if (type === 'update-intensity-ui') {
-        document.getElementById('intensity').value = value
-        document.getElementById('intensityValue').innerText = value
-      }
-
-      if (type === 'update-spread-ui') {
-        document.getElementById('spread').value = value
-        document.getElementById('spreadValue').innerText = value
-      }
-
-      if (type === 'update-color-ui') {
-        document.getElementById('colorPicker').value = color
-      }
-
-      if (type === 'reset-range-ui') {
-        document.getElementById('intensity').value = 0
-        document.getElementById('intensityValue').innerText = '0'
-        document.getElementById('spread').value = 0
-        document.getElementById('spreadValue').innerText = '0'
-      }
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      const intensityInput = document.getElementById('intensity')
-      const spreadInput = document.getElementById('spread')
-      const colorPicker = document.getElementById('colorPicker')
-
-      intensityInput.addEventListener('input', () => {
-        const intensityValue = intensityInput.value
-        parent.postMessage(
-          {
-            pluginMessage: {
-              type: 'value-change',
-              value: intensityValue,
-            },
-          },
-          '*',
-        )
-      })
-
-      spreadInput.addEventListener('input', () => {
-        const spreadValue = spreadInput.value
-        parent.postMessage(
-          {
-            pluginMessage: {
-              type: 'size-change',
-              value: spreadValue,
-            },
-          },
-          '*',
-        )
-      })
-
       const intensityColorPicker = document.getElementById(
         'intensityColorPicker',
       )
       const spreadColorPicker = document.getElementById('spreadColorPicker')
 
-      intensityColorPicker.addEventListener('input', () => {
-        sendColorToPlugin('intensityColor', intensityColorPicker.value)
+      intensityInput.addEventListener('input', () => {
+        const intensityValue = intensityInput.value
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: 'intensity-change',
+              value: intensityValue,
+            },
+          },
+          '*',
+        )
       })
 
-      spreadColorPicker.addEventListener('input', () => {
-        sendColorToPlugin('spreadColor', spreadColorPicker.value)
+      spreadInput.addEventListener('input', () => {
+        const spreadValue = spreadInput.value
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: 'size-change',
+              value: spreadValue,
+            },
+          },
+          '*',
+        )
       })
-    })
 
-    function sendColorToPlugin() {
       intensityColorPicker.addEventListener('input', () => {
         parent.postMessage(
           {
@@ -305,25 +193,9 @@
           '*',
         )
       })
-    }
+    })
 
     window.onload = () => {
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: 'get-saved-range-value',
-          },
-        },
-        '*',
-      )
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: 'get-saved-color-value',
-          },
-        },
-        '*',
-      )
       parent.postMessage(
         {
           pluginMessage: {
@@ -340,18 +212,18 @@
       if (type === 'update-intensity-ui') {
         document.getElementById('intensity').value = value
       }
-
       if (type === 'update-spread-ui') {
         document.getElementById('spread').value = value
       }
-
-      if (type === 'update-color-ui') {
-        document.getElementById('colorPicker').value = color
-      }
-
       if (type === 'reset-range-ui') {
         document.getElementById('intensity').value = 0
         document.getElementById('spread').value = 0
+      }
+      if (type === 'update-intensityColor-ui') {
+        document.getElementById('intensityColorPicker').value = color
+      }
+      if (type === 'update-spreadColor-ui') {
+        document.getElementById('spreadColorPicker').value = color
       }
     }
   </script>

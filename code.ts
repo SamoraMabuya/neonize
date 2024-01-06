@@ -20,21 +20,6 @@ function createNeonizeGroupWithDuplicates(node: SceneNode): GroupNode | null {
   return group;
 }
 
-function applyLayerBlurToGroup(group: GroupNode, blurValue: number) {
-  group.children.forEach((child) => {
-    // Apply blur only to duplicates, not the original node
-    // Check if the child is of a type that can have effects
-    if ("effects" in child && child.getPluginData("isNeonized") !== "true") {
-      const blurEffect: Effect = {
-        type: "LAYER_BLUR",
-        radius: blurValue * 10,
-        visible: true,
-      };
-      child.effects = [blurEffect];
-    }
-  });
-}
-
 function hexToRgb(hex: string): RGBA {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
@@ -48,33 +33,6 @@ function hexToRgb(hex: string): RGBA {
 }
 
 let currentColor: RGBA = { r: 1, g: 1, b: 1, a: 1 }; // Default color
-
-function createDropShadowEffects(value: number): DropShadowEffect[] {
-  // Calculate the radius from the slider value
-  const radius = value * 0.2;
-
-  // Create an array to store the drop shadow effects
-  const effects: DropShadowEffect[] = [];
-
-  // Check if the first drop shadow's radius is 0, then reset all to 0
-  const finalRadius = radius <= 0 ? 0 : radius;
-
-  // Create 5 drop shadow effects with the same or reset radius
-  for (let i = 0; i < 5; i++) {
-    effects.push({
-      type: "DROP_SHADOW",
-      color: currentColor,
-      offset: { x: 0, y: 0 },
-      radius: finalRadius,
-      spread: 0,
-      visible: true,
-      blendMode: "NORMAL",
-      showShadowBehindNode: false,
-    });
-  }
-
-  return effects;
-}
 
 type ValidNodeType =
   | RectangleNode
@@ -95,33 +53,6 @@ const isNodeType = (node: SceneNode): node is ValidNodeType =>
     "VECTOR",
     "TEXT",
   ].includes(node.type);
-
-function applyEffectsToNode(
-  node: ValidNodeType,
-  effects: DropShadowEffect[],
-  rangeValue: number
-) {
-  if (node) {
-    node.effects = effects;
-    node.setPluginData("enhanced", "true");
-    node.setPluginData("rangeValue", rangeValue.toString());
-  }
-}
-
-function updateNodeDropShadow(
-  node: ValidNodeType,
-  effectType: "intensity" | "spread",
-  color: RGBA
-) {
-  if ("effects" in node) {
-    // Apply the provided color to drop shadow effects
-    let effects = node.effects.map((effect) =>
-      effect.type === "DROP_SHADOW" ? { ...effect, color: color } : effect
-    );
-
-    node.effects = effects;
-  }
-}
 
 const ERROR_MESSAGE = "Please use shapes or text";
 const ERROR_OPTIONS = {
@@ -156,20 +87,74 @@ function reselectCurrentNode() {
 
 function updateUIColorFromSelection() {
   const selectedNodes = figma.currentPage.selection;
+
   if (selectedNodes.length > 0 && isNodeType(selectedNodes[0])) {
-    const shapeNode = selectedNodes[0];
-    const fills = shapeNode.fills as ReadonlyArray<Paint>;
-    if (fills.length > 0 && fills[0].type === "SOLID") {
-      const solidFill = fills[0] as SolidPaint;
-      const color = solidFill.color;
-      const hexColor = rgbToHex(color.r, color.g, color.b);
-      currentColor = {
-        r: color.r,
-        g: color.g,
-        b: color.b,
-        a: solidFill.opacity || 1,
-      };
-      figma.ui.postMessage({ type: "update-color-ui", color: hexColor });
+    const node = selectedNodes[0];
+
+    // Check if the node has been neonized
+    if (node.getPluginData("neonized") === "true") {
+      const dropShadows = node.effects.filter(
+        (effect) => effect.type === "DROP_SHADOW"
+      ) as DropShadowEffect[];
+
+      if (dropShadows.length > 0) {
+        const intensityDropShadow = dropShadows[0]; // Assuming the first drop shadow is for intensity
+        const spreadDropShadow =
+          dropShadows.length > 1 ? dropShadows[1] : intensityDropShadow; // Assuming the second drop shadow is for spread
+
+        // Extract colors
+        intensityColor = intensityDropShadow.color;
+        spreadColor = spreadDropShadow.color;
+
+        // Convert RGBA to Hex
+        const intensityHex = rgbToHex(
+          intensityColor.r,
+          intensityColor.g,
+          intensityColor.b
+        );
+        const spreadHex = rgbToHex(spreadColor.r, spreadColor.g, spreadColor.b);
+
+        // Update UI
+        figma.ui.postMessage({
+          type: "update-intensityColor-ui",
+          color: intensityHex,
+        });
+        figma.ui.postMessage({
+          type: "update-spreadColor-ui",
+          color: spreadHex,
+        });
+      }
+    } else {
+      const fills = node.fills as ReadonlyArray<Paint>;
+      if (fills.length > 0 && fills[0].type === "SOLID") {
+        const solidFill = fills[0] as SolidPaint;
+        const color = solidFill.color;
+        const hexColor = rgbToHex(color.r, color.g, color.b);
+
+        // Update both color pickers to reflect the node's fill color
+        figma.ui.postMessage({
+          type: "update-intensityColor-ui",
+          color: hexColor,
+        });
+        figma.ui.postMessage({
+          type: "update-spreadColor-ui",
+          color: hexColor,
+        });
+
+        // Update the global color variables
+        intensityColor = {
+          r: color.r,
+          g: color.g,
+          b: color.b,
+          a: solidFill.opacity || 1,
+        };
+        spreadColor = {
+          r: color.r,
+          g: color.g,
+          b: color.b,
+          a: solidFill.opacity || 1,
+        }; // Assuming the same color for both initially
+      }
     }
   }
 }
@@ -185,12 +170,13 @@ figma.on("selectionchange", () => {
     const node = selectedNodes[0];
 
     // Check if the node has been enhanced by the plugin
-    const enhanced = node.getPluginData("enhanced");
-    if (enhanced === "true") {
+    const intensityData = node.getPluginData("intensityValue");
+
+    if (intensityData === "true") {
       // If enhanced, get the stored range value
-      const rangeValue = node.getPluginData("rangeValue");
+      const intensityValue = node.getPluginData("intensityData");
       // Update UI with the stored range value
-      figma.ui.postMessage({ type: "update-range-ui", value: rangeValue });
+      figma.ui.postMessage({ type: "update-range-ui", value: intensityValue });
     } else {
       // If not enhanced, reset the slider to 0
       figma.ui.postMessage({ type: "reset-range-ui" });
@@ -235,11 +221,20 @@ function createIntensityDuplicate(
   node: SceneNode,
   group: GroupNode
 ): SceneNode | null {
+  if (!node.parent) {
+    figma.notify(
+      "Cannot create spread duplicate: the selected node has no parent."
+    );
+    return null;
+  }
   const intensityDuplicate = node.clone();
   intensityDuplicate.name = "Intensity";
   intensityDuplicate.x = node.x;
   intensityDuplicate.y = node.y;
-  group.appendChild(intensityDuplicate);
+  if (group) {
+    group.appendChild(intensityDuplicate);
+  }
+
   return intensityDuplicate;
 }
 
@@ -269,13 +264,18 @@ function createSpreadDuplicate(
 }
 let intensityColor: RGBA = { r: 1, g: 1, b: 1, a: 1 };
 
-function applyIntensityEffects(node: SceneNode, opacity: number, color: RGBA) {
+function applyIntensityEffects(
+  node: SceneNode,
+  processedOpacity: number,
+  color: RGBA,
+  rawIntensityValue: number
+) {
   if ("effects" in node) {
     const effects: DropShadowEffect[] = [];
     for (let i = 0; i < 10; i++) {
       effects.push({
         type: "DROP_SHADOW",
-        color: { ...color, a: opacity },
+        color: { ...color, a: processedOpacity },
         offset: { x: 0, y: 0 },
         radius: 8.5,
         spread: 0,
@@ -286,7 +286,7 @@ function applyIntensityEffects(node: SceneNode, opacity: number, color: RGBA) {
     }
     node.effects = effects;
   }
-  node.setPluginData("intensityValue", opacity.toString());
+  node.setPluginData("intensityValue", rawIntensityValue.toString()); // Save the raw slider value
 }
 
 let spreadColor: RGBA = { r: 1, g: 1, b: 1, a: 1 };
@@ -311,29 +311,22 @@ function applySpreadEffects(node: SceneNode, value: number, color: RGBA) {
   node.setPluginData("spreadValue", value.toString());
 }
 
-function applyLayerBlurs(node: SceneNode, blurValue: number) {
-  if ("effects" in node) {
-    const effects: BlurEffect[] = [];
-    for (let i = 0; i < 10; i++) {
-      effects.push({
-        type: "LAYER_BLUR",
-        radius: blurValue,
-        visible: true,
-      });
-    }
-    node.effects = effects;
-  }
-}
-
-function findIntensityDuplicate(node: SceneNode): SceneNode | null {
-  // Find the intensity duplicate in the group
-  let group = findNeonizeGroupForNode(node);
-  return group ? group.findOne((n) => n.name === "Intensity") : null;
-}
 figma.on("selectionchange", () => {
   updateUIColorFromSelection();
   updatePluginUIFromSelectedNode();
 });
+
+function findIntensityDuplicate(node: SceneNode): SceneNode | null {
+  // Find the Neonize Group containing the original node
+  let group = findNeonizeGroupForNode(node);
+
+  // Search for the "Intensity" clone within the group
+  if (group) {
+    return group.findOne((n) => n.name === "Intensity") as SceneNode | null;
+  }
+
+  return null;
+}
 function findSpreadDuplicate(node: SceneNode): SceneNode | null {
   // Find the Neonize Group containing the original node
   let group = findNeonizeGroupForNode(node);
@@ -378,22 +371,24 @@ function updatePluginUIFromSelectedNode() {
       const intensityNode = group.findOne((n) => n.name === "Intensity");
       const spreadNode = group.findOne((n) => n.name === "Spread");
 
+      // Update intensity value
       const intensityValue = intensityNode
-        ? parseFloat(intensityNode.getPluginData("intensityValue"))
+        ? parseInt(intensityNode.getPluginData("intensityValue"))
         : 0;
-      const spreadValue = spreadNode
-        ? parseInt(spreadNode.getPluginData("spreadValue"))
-        : 0;
-
-      // Post message to UI to update sliders
       figma.ui.postMessage({
         type: "update-intensity-ui",
         value: intensityValue,
       });
+
+      // Update spread value
+      const spreadValue = spreadNode
+        ? parseInt(spreadNode.getPluginData("spreadValue"))
+        : 0;
       figma.ui.postMessage({ type: "update-spread-ui", value: spreadValue });
     }
   }
 }
+
 function findIntensityNode(): SceneNode | null {
   const group = findNeonizeGroupForNode(figma.currentPage.selection[0]);
   if (group) {
@@ -415,12 +410,20 @@ figma.ui.onmessage = async (msg) => {
   switch (msg.type) {
     case "intensityColor-change":
       intensityColor = hexToRgb(msg.color);
+
       const intensityNode = findIntensityNode();
       if (intensityNode) {
+        // Retrieve the raw intensity value stored in the plugin data
+        const rawIntensityValue = parseInt(
+          intensityNode.getPluginData("intensityValue")
+        );
+
+        // Pass the raw intensity value directly to applyIntensityEffects
         applyIntensityEffects(
           intensityNode,
-          parseFloat(intensityNode.getPluginData("intensityValue")) / 100,
-          intensityColor
+          rawIntensityValue / 100, // Convert to a percentage for opacity
+          intensityColor,
+          rawIntensityValue // Pass the raw slider value
         );
       }
       break;
@@ -437,55 +440,22 @@ figma.ui.onmessage = async (msg) => {
       }
       break;
     case "ui-ready":
-      // Called when the UI is ready; initialize with the selected node color
       updateUIColorFromSelection();
-
       break;
-    case "save-color-value":
-      await figma.clientStorage.setAsync("savedColorValue", msg.color);
-      break;
-
-    case "get-saved-color-value":
-      const savedColor =
-        (await figma.clientStorage.getAsync("savedColorValue")) || "#ffffff";
-      figma.ui.postMessage({ type: "update-color-ui", color: savedColor });
-      currentColor = hexToRgb(savedColor);
-      break;
-
-    case "save-range-value":
-      await figma.clientStorage.setAsync("savedRangeValue", msg.value);
-      break;
-
-    case "get-saved-range-value":
-      const savedValue =
-        (await figma.clientStorage.getAsync("savedRangeValue")) || 0;
-      figma.ui.postMessage({ type: "update-range-ui", value: savedValue });
-      break;
-    case "value-change":
-      const intensityValue = parseFloat(msg.value) / 100;
+    case "intensity-change":
+      const intensityValue = parseInt(msg.value); // Directly use the received value
       let selectedNode = selectedNodes[0];
-
-      // If the entire group is selected, find the original node within the group
-      if (
-        selectedNode.type === "GROUP" &&
-        selectedNode.name === "Neonize Group"
-      ) {
-        const originalNode = selectedNode.findOne(
-          (n) => n.getPluginData("isNeonized") === "true"
-        );
-        if (originalNode) {
-          selectedNode = originalNode;
-        }
-      }
-
       if (selectedNode && isNodeType(selectedNode)) {
-        let group = findNeonizeGroupForNode(selectedNode);
+        let group = findNeonizeGroupForNode(selectedNodes[0]);
 
         // Create group with duplicates if it doesn't exist
-        if (!group) {
-          group = createNeonizeGroupWithDuplicates(selectedNode);
+        if (
+          !group &&
+          selectedNodes.length > 0 &&
+          isNodeType(selectedNodes[0])
+        ) {
+          group = createNeonizeGroupWithDuplicates(selectedNodes[0]);
         }
-
         // Find or create intensity node
         let intensityNode = findIntensityDuplicate(selectedNode);
         if (!intensityNode && group) {
@@ -494,7 +464,12 @@ figma.ui.onmessage = async (msg) => {
 
         // Apply intensity effects
         if (intensityNode) {
-          applyIntensityEffects(intensityNode, intensityValue, intensityColor); // Assuming intensityColor is defined elsewhere
+          applyIntensityEffects(
+            intensityNode,
+            intensityValue / 100,
+            intensityColor,
+            intensityValue
+          ); // Assuming intensityColor is defined elsewhere
           if (group) {
             reorderNodesInGroup(group);
           }
