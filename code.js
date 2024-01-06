@@ -227,7 +227,7 @@ function applySpreadEffects(node, value) {
                 type: "DROP_SHADOW",
                 color: Object.assign(Object.assign({}, currentColor), { a: 1 }), // Set opacity to 100%
                 offset: { x: 0, y: 0 }, // Incremental offset for spread effect
-                radius: value, // Use the value from the slider for radius
+                radius: value * 2, // Use the value from the slider for radius
                 spread: 0,
                 visible: true,
                 blendMode: "NORMAL",
@@ -266,6 +266,24 @@ function findSpreadDuplicate(node) {
         return group.findOne((n) => n.name === "Spread");
     }
     return null;
+}
+function reorderNodesInGroup(group) {
+    const originalNode = group.findOne((n) => n.getPluginData("isNeonized") === "true");
+    const intensityNode = group.findOne((n) => n.name === "Intensity");
+    const spreadNode = group.findOne((n) => n.name === "Spread");
+    // Remove all nodes from the group
+    group.children.forEach((child) => {
+        group.appendChild(child);
+    });
+    // Add nodes back in the desired order
+    if ((originalNode && intensityNode) || (originalNode && spreadNode)) {
+        group.insertChild(1, originalNode);
+    }
+    if (originalNode && intensityNode && spreadNode) {
+        group.insertChild(2, originalNode);
+        group.insertChild(1, intensityNode);
+        group.insertChild(0, spreadNode);
+    }
 }
 figma.ui.onmessage = async (msg) => {
     const selectedNodes = figma.currentPage.selection;
@@ -319,6 +337,9 @@ figma.ui.onmessage = async (msg) => {
                 // Apply intensity effects
                 if (intensityNode) {
                     applyIntensityEffects(intensityNode, intensityValue);
+                    if (group) {
+                        reorderNodesInGroup(group);
+                    }
                 }
             }
             break;
@@ -337,6 +358,9 @@ figma.ui.onmessage = async (msg) => {
             // Apply spread effects
             if (spreadNode) {
                 applySpreadEffects(spreadNode, spreadValue);
+                if (group) {
+                    reorderNodesInGroup(group);
+                }
             }
             break;
     }
