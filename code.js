@@ -78,10 +78,10 @@ function applyEffectsToNode(node, effects, rangeValue) {
         node.setPluginData("rangeValue", rangeValue.toString());
     }
 }
-function updateNodeDropShadow(node) {
+function updateNodeDropShadow(node, effectType, color) {
     if ("effects" in node) {
-        let effects = node.effects.map((effect) => effect.type === "DROP_SHADOW"
-            ? Object.assign(Object.assign({}, effect), { color: currentColor }) : effect);
+        // Apply the provided color to drop shadow effects
+        let effects = node.effects.map((effect) => effect.type === "DROP_SHADOW" ? Object.assign(Object.assign({}, effect), { color: color }) : effect);
         node.effects = effects;
     }
 }
@@ -131,6 +131,8 @@ function updateUIColorFromSelection() {
 }
 figma.on("run", () => {
     reselectCurrentNode();
+    updateUIColorFromSelection();
+    updatePluginUIFromSelectedNode();
 });
 figma.on("selectionchange", () => {
     const selectedNodes = figma.currentPage.selection;
@@ -201,15 +203,16 @@ function createSpreadDuplicate(node, group) {
     }
     return spreadDuplicate;
 }
-function applyIntensityEffects(node, opacity) {
+let intensityColor = { r: 1, g: 1, b: 1, a: 1 };
+function applyIntensityEffects(node, opacity, color) {
     if ("effects" in node) {
         const effects = [];
         for (let i = 0; i < 10; i++) {
             effects.push({
                 type: "DROP_SHADOW",
-                color: Object.assign(Object.assign({}, currentColor), { a: opacity }), // Apply opacity to the color
+                color: Object.assign(Object.assign({}, color), { a: opacity }),
                 offset: { x: 0, y: 0 },
-                radius: 5.5, // Fixed radius
+                radius: 8.5,
                 spread: 0,
                 visible: true,
                 blendMode: "NORMAL",
@@ -218,16 +221,18 @@ function applyIntensityEffects(node, opacity) {
         }
         node.effects = effects;
     }
+    node.setPluginData("intensityValue", opacity.toString());
 }
-function applySpreadEffects(node, value) {
+let spreadColor = { r: 1, g: 1, b: 1, a: 1 };
+function applySpreadEffects(node, value, color) {
     if ("effects" in node) {
         const effects = [];
         for (let i = 0; i < 10; i++) {
             effects.push({
                 type: "DROP_SHADOW",
-                color: Object.assign(Object.assign({}, currentColor), { a: 1 }), // Set opacity to 100%
-                offset: { x: 0, y: 0 }, // Incremental offset for spread effect
-                radius: value * 2, // Use the value from the slider for radius
+                color: Object.assign(Object.assign({}, color), { a: 1 }),
+                offset: { x: 0, y: 0 },
+                radius: value * 2,
                 spread: 0,
                 visible: true,
                 blendMode: "NORMAL",
@@ -236,6 +241,7 @@ function applySpreadEffects(node, value) {
         }
         node.effects = effects;
     }
+    node.setPluginData("spreadValue", value.toString());
 }
 function applyLayerBlurs(node, blurValue) {
     if ("effects" in node) {
@@ -257,6 +263,7 @@ function findIntensityDuplicate(node) {
 }
 figma.on("selectionchange", () => {
     updateUIColorFromSelection();
+    updatePluginUIFromSelectedNode();
 });
 function findSpreadDuplicate(node) {
     // Find the Neonize Group containing the original node
@@ -285,16 +292,63 @@ function reorderNodesInGroup(group) {
         group.insertChild(0, spreadNode);
     }
 }
+function updatePluginUIFromSelectedNode() {
+    const selectedNodes = figma.currentPage.selection;
+    if (selectedNodes.length > 0) {
+        const node = selectedNodes[0];
+        const group = findNeonizeGroupForNode(node);
+        if (group) {
+            const intensityNode = group.findOne((n) => n.name === "Intensity");
+            const spreadNode = group.findOne((n) => n.name === "Spread");
+            const intensityValue = intensityNode
+                ? parseFloat(intensityNode.getPluginData("intensityValue"))
+                : 0;
+            const spreadValue = spreadNode
+                ? parseInt(spreadNode.getPluginData("spreadValue"))
+                : 0;
+            // Post message to UI to update sliders
+            figma.ui.postMessage({
+                type: "update-intensity-ui",
+                value: intensityValue,
+            });
+            figma.ui.postMessage({ type: "update-spread-ui", value: spreadValue });
+        }
+    }
+}
+function findIntensityNode() {
+    const group = findNeonizeGroupForNode(figma.currentPage.selection[0]);
+    if (group) {
+        return group.findOne((n) => n.name === "Intensity");
+    }
+    return null;
+}
+function findSpreadNode() {
+    const group = findNeonizeGroupForNode(figma.currentPage.selection[0]);
+    if (group) {
+        return group.findOne((n) => n.name === "Spread");
+    }
+    return null;
+}
 figma.ui.onmessage = async (msg) => {
     const selectedNodes = figma.currentPage.selection;
     switch (msg.type) {
+        case "intensityColor-change":
+            intensityColor = hexToRgb(msg.color);
+            const intensityNode = findIntensityNode();
+            if (intensityNode) {
+                applyIntensityEffects(intensityNode, parseFloat(intensityNode.getPluginData("intensityValue")) / 100, intensityColor);
+            }
+            break;
+        case "spreadColor-change":
+            spreadColor = hexToRgb(msg.color);
+            const sizeNode = findSpreadNode();
+            if (sizeNode) {
+                applySpreadEffects(sizeNode, parseInt(sizeNode.getPluginData("spreadValue")), spreadColor);
+            }
+            break;
         case "ui-ready":
             // Called when the UI is ready; initialize with the selected node color
             updateUIColorFromSelection();
-            break;
-        case "color-change":
-            currentColor = hexToRgb(msg.color);
-            updateDropShadowColor();
             break;
         case "save-color-value":
             await figma.clientStorage.setAsync("savedColorValue", msg.color);
@@ -303,7 +357,6 @@ figma.ui.onmessage = async (msg) => {
             const savedColor = (await figma.clientStorage.getAsync("savedColorValue")) || "#ffffff";
             figma.ui.postMessage({ type: "update-color-ui", color: savedColor });
             currentColor = hexToRgb(savedColor);
-            updateDropShadowColor();
             break;
         case "save-range-value":
             await figma.clientStorage.setAsync("savedRangeValue", msg.value);
@@ -336,7 +389,7 @@ figma.ui.onmessage = async (msg) => {
                 }
                 // Apply intensity effects
                 if (intensityNode) {
-                    applyIntensityEffects(intensityNode, intensityValue);
+                    applyIntensityEffects(intensityNode, intensityValue, intensityColor); // Assuming intensityColor is defined elsewhere
                     if (group) {
                         reorderNodesInGroup(group);
                     }
@@ -357,7 +410,7 @@ figma.ui.onmessage = async (msg) => {
             }
             // Apply spread effects
             if (spreadNode) {
-                applySpreadEffects(spreadNode, spreadValue);
+                applySpreadEffects(spreadNode, spreadValue, spreadColor);
                 if (group) {
                     reorderNodesInGroup(group);
                 }
@@ -365,10 +418,3 @@ figma.ui.onmessage = async (msg) => {
             break;
     }
 };
-function updateDropShadowColor() {
-    figma.currentPage.selection.forEach((selectedNode) => {
-        if (isNodeType(selectedNode)) {
-            updateNodeDropShadow(selectedNode);
-        }
-    });
-}
