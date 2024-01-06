@@ -3,40 +3,23 @@
 figma.showUI(__html__);
 figma.ui.resize(400, 220);
 
-function createAndGroupDuplicates(node: SceneNode): GroupNode | null {
+function createNeonizeGroupWithDuplicates(node: SceneNode): GroupNode | null {
   if (!node.parent) {
     figma.notify("Cannot group nodes: the selected node has no parent.");
     return null;
   }
 
-  const duplicates: SceneNode[] = [];
-  for (let i = 0; i < 4; i++) {
-    const duplicate = node.clone();
-    duplicate.name = `spread ${4 - i}`; // Naming the duplicates in reverse order
-
-    if ("absoluteTransform" in node.parent) {
-      duplicate.x = node.x + node.parent.absoluteTransform[0][2];
-      duplicate.y = node.y + node.parent.absoluteTransform[1][2];
-    } else {
-      duplicate.x = node.x;
-      duplicate.y = node.y;
-    }
-
-    duplicates.unshift(duplicate); // Add to the beginning of the array
-  }
-
   // Rename the original node
   node.name = "Original";
 
-  // Group the original node with its duplicates, with original on top
-  const allNodes = [...duplicates, node]; // Original node first, then duplicates in reverse order
-  const group = figma.group(allNodes, node.parent);
-  group.appendChild(node);
+  // Create a group with the original node
+  const group = figma.group([node], node.parent);
   group.name = "Neonize Group";
   node.setPluginData("isNeonized", "true");
 
   return group;
 }
+
 function applyLayerBlurToGroup(group: GroupNode, blurValue: number) {
   group.children.forEach((child) => {
     // Apply blur only to duplicates, not the original node
@@ -67,15 +50,22 @@ function hexToRgb(hex: string): RGBA {
 let currentColor: RGBA = { r: 1, g: 1, b: 1, a: 1 }; // Default color
 
 function createDropShadowEffects(value: number): DropShadowEffect[] {
-  const effects: DropShadowEffect[] = [];
-  const baseMultiplier = value * 0.2;
+  // Calculate the radius from the slider value
+  const radius = value * 0.2;
 
+  // Create an array to store the drop shadow effects
+  const effects: DropShadowEffect[] = [];
+
+  // Check if the first drop shadow's radius is 0, then reset all to 0
+  const finalRadius = radius <= 0 ? 0 : radius;
+
+  // Create 5 drop shadow effects with the same or reset radius
   for (let i = 0; i < 5; i++) {
     effects.push({
       type: "DROP_SHADOW",
       color: currentColor,
       offset: { x: 0, y: 0 },
-      radius: baseMultiplier + i * 10,
+      radius: finalRadius,
       spread: 0,
       visible: true,
       blendMode: "NORMAL",
@@ -155,7 +145,8 @@ function reselectCurrentNode() {
 
     setTimeout(() => {
       figma.currentPage.selection = currentSelection;
-    }, 100);
+      updateUIColorFromSelection();
+    }, 150);
   }
 }
 
@@ -187,20 +178,24 @@ figma.on("selectionchange", () => {
   const selectedNodes = figma.currentPage.selection;
   if (selectedNodes.length > 0 && isNodeType(selectedNodes[0])) {
     const node = selectedNodes[0];
+
+    // Check if the node has been enhanced by the plugin
     const enhanced = node.getPluginData("enhanced");
-    if (enhanced) {
+    if (enhanced === "true") {
+      // If enhanced, get the stored range value
       const rangeValue = node.getPluginData("rangeValue");
-      // Post message to UI to update range slider
+      // Update UI with the stored range value
       figma.ui.postMessage({ type: "update-range-ui", value: rangeValue });
     } else {
-      // Post message to UI to reset range slider
+      // If not enhanced, reset the slider to 0
       figma.ui.postMessage({ type: "reset-range-ui" });
     }
   } else {
-    // Post message to UI to reset range slider
+    // No valid node selected, reset the slider to 0
     figma.ui.postMessage({ type: "reset-range-ui" });
   }
 });
+
 function findNeonizeGroupForNode(node: SceneNode): GroupNode | null {
   let currentNode: BaseNode | null = node;
 
@@ -230,10 +225,122 @@ function findGroupWithOriginalNode(node: SceneNode): GroupNode | null {
 // Updated to check all parent nodes for an existing "Neonize Group"
 
 // selectionchange listener
+
+function createIntensityDuplicate(
+  node: SceneNode,
+  group: GroupNode
+): SceneNode | null {
+  const intensityDuplicate = node.clone();
+  intensityDuplicate.name = "Intensity";
+  intensityDuplicate.x = node.x;
+  intensityDuplicate.y = node.y;
+  group.appendChild(intensityDuplicate);
+  return intensityDuplicate;
+}
+
+function createSpreadDuplicate(
+  node: SceneNode,
+  group: GroupNode | null
+): SceneNode | null {
+  if (!node.parent) {
+    figma.notify(
+      "Cannot create spread duplicate: the selected node has no parent."
+    );
+    return null;
+  }
+
+  // Clone the original node and name it "Spread"
+  const spreadDuplicate = node.clone();
+  spreadDuplicate.name = "Spread";
+  spreadDuplicate.x = node.x;
+  spreadDuplicate.y = node.y;
+
+  // If a group already exists, add the spread duplicate to it
+  if (group) {
+    group.appendChild(spreadDuplicate);
+  }
+
+  return spreadDuplicate;
+}
+
+function applyIntensityEffects(node: SceneNode, opacity: number) {
+  if ("effects" in node) {
+    const effects: DropShadowEffect[] = [];
+
+    for (let i = 0; i < 10; i++) {
+      effects.push({
+        type: "DROP_SHADOW",
+        color: { ...currentColor, a: opacity }, // Apply opacity to the color
+        offset: { x: 0, y: 0 },
+        radius: 5.5, // Fixed radius
+        spread: 0,
+        visible: true,
+        blendMode: "NORMAL",
+        showShadowBehindNode: false,
+      });
+    }
+
+    node.effects = effects;
+  }
+}
+
+function applySpreadEffects(node: SceneNode, value: number) {
+  if ("effects" in node) {
+    const effects: DropShadowEffect[] = [];
+    for (let i = 0; i < 10; i++) {
+      effects.push({
+        type: "DROP_SHADOW",
+        color: { ...currentColor, a: 1 }, // Set opacity to 100%
+        offset: { x: 0, y: 0 }, // Incremental offset for spread effect
+        radius: value, // Use the value from the slider for radius
+        spread: 0,
+        visible: true,
+        blendMode: "NORMAL",
+        showShadowBehindNode: false,
+      });
+    }
+
+    node.effects = effects;
+  }
+}
+
+function applyLayerBlurs(node: SceneNode, blurValue: number) {
+  if ("effects" in node) {
+    const effects: BlurEffect[] = [];
+    for (let i = 0; i < 10; i++) {
+      effects.push({
+        type: "LAYER_BLUR",
+        radius: blurValue,
+        visible: true,
+      });
+    }
+    node.effects = effects;
+  }
+}
+
+function findIntensityDuplicate(node: SceneNode): SceneNode | null {
+  // Find the intensity duplicate in the group
+  let group = findNeonizeGroupForNode(node);
+  return group ? group.findOne((n) => n.name === "Intensity") : null;
+}
 figma.on("selectionchange", () => {
   updateUIColorFromSelection();
 });
+function findSpreadDuplicate(node: SceneNode): SceneNode | null {
+  // Find the Neonize Group containing the original node
+  let group = findNeonizeGroupForNode(node);
+
+  // Search for the "Spread" clone within the group
+  if (group) {
+    return group.findOne((n) => n.name === "Spread") as SceneNode | null;
+  }
+
+  return null;
+}
+
 figma.ui.onmessage = async (msg) => {
+  const selectedNodes = figma.currentPage.selection;
+
   switch (msg.type) {
     case "ui-ready":
       // Called when the UI is ready; initialize with the selected node color
@@ -267,42 +374,62 @@ figma.ui.onmessage = async (msg) => {
       figma.ui.postMessage({ type: "update-range-ui", value: savedValue });
       break;
     case "value-change":
-      const glowEffects = createDropShadowEffects(msg.value);
-      if (!figma.currentPage.selection.every(isNodeType)) {
-        figma.notify(ERROR_MESSAGE, ERROR_OPTIONS);
-        return;
-      }
-      figma.currentPage.selection.forEach((node) => {
-        if (isNodeType(node)) {
-          applyEffectsToNode(node, glowEffects, msg.value);
+      const intensityValue = parseFloat(msg.value) / 100;
+      let selectedNode = selectedNodes[0];
+
+      // If the entire group is selected, find the original node within the group
+      if (
+        selectedNode.type === "GROUP" &&
+        selectedNode.name === "Neonize Group"
+      ) {
+        const originalNode = selectedNode.findOne(
+          (n) => n.getPluginData("isNeonized") === "true"
+        );
+        if (originalNode) {
+          selectedNode = originalNode;
         }
-      });
+      }
+
+      if (selectedNode && isNodeType(selectedNode)) {
+        let group = findNeonizeGroupForNode(selectedNode);
+
+        // Create group with duplicates if it doesn't exist
+        if (!group) {
+          group = createNeonizeGroupWithDuplicates(selectedNode);
+        }
+
+        // Find or create intensity node
+        let intensityNode = findIntensityDuplicate(selectedNode);
+        if (!intensityNode && group) {
+          intensityNode = createIntensityDuplicate(selectedNode, group);
+        }
+
+        // Apply intensity effects
+        if (intensityNode) {
+          applyIntensityEffects(intensityNode, intensityValue);
+        }
+      }
       break;
+
     case "size-change":
-      const blurValue = parseInt(msg.value);
-      const selectedNodes = figma.currentPage.selection;
+      const spreadValue = parseInt(msg.value);
+      let group = findNeonizeGroupForNode(selectedNodes[0]);
 
-      if (selectedNodes.length === 0) {
-        figma.notify("Please select a node");
-        break;
+      // Create group with duplicates if it doesn't exist
+      if (!group && selectedNodes.length > 0 && isNodeType(selectedNodes[0])) {
+        group = createNeonizeGroupWithDuplicates(selectedNodes[0]);
       }
 
-      const selectedNode = selectedNodes[0];
-      let group = findNeonizeGroupForNode(selectedNode);
-
-      // Check if the node or any of its parents have been neonized
-      if (selectedNode.getPluginData("isNeonized") === "true" || group) {
-        group = group || findGroupWithOriginalNode(selectedNode);
-      } else if (isNodeType(selectedNode)) {
-        group = createAndGroupDuplicates(selectedNode);
+      // Find existing spread node or create one if it doesn't exist
+      let spreadNode = findSpreadDuplicate(selectedNodes[0]);
+      if (!spreadNode && group) {
+        spreadNode = createSpreadDuplicate(selectedNodes[0], group);
       }
 
-      if (!group) {
-        figma.notify("Cannot find or create a Neonize Group");
-        break;
+      // Apply spread effects
+      if (spreadNode) {
+        applySpreadEffects(spreadNode, spreadValue);
       }
-
-      applyLayerBlurToGroup(group, blurValue);
       break;
   }
 };
