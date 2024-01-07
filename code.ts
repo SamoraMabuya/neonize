@@ -445,6 +445,21 @@ figma.ui.onmessage = async (msg) => {
     case "intensity-change":
       const intensityValue = parseInt(msg.value); // Directly use the received value
       let selectedNode = selectedNodes[0];
+
+      if (
+        selectedNode.type === "GROUP" &&
+        selectedNode.name === "Neonize Group"
+      ) {
+        // Find the intensity node within the group
+        const intensityNodeInGroup = findIntensityNode();
+
+        // If found, select this node
+        if (intensityNodeInGroup) {
+          figma.currentPage.selection = [intensityNodeInGroup];
+          selectedNode = intensityNodeInGroup;
+        }
+      }
+
       if (selectedNode && isNodeType(selectedNode)) {
         let group = findNeonizeGroupForNode(selectedNodes[0]);
 
