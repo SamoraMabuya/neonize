@@ -1,16 +1,18 @@
-<!-- Import Figma Plugin Design System -->
-<link
-  rel="stylesheet"
-  href="../../node_modules/figma-plugin-ds/dist/figma-plugin-ds.css"
-/>
-
-<!-- Custom Styles -->
+<head>
+  <link
+    rel="stylesheet"
+    href="../../node_modules/figma-plugin-ds/dist/figma-plugin-ds.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+</head>
 <style>
   body {
+    font-family: 'Inter', sans-serif;
     overflow: hidden;
-    /* This will hide any overflow and remove scrollbars */
   }
-  /* Block: slider */
 
   .color-picker-container {
     background: #ffffff;
@@ -20,7 +22,6 @@
     padding: 16px;
     display: flex;
     align-items: center;
-    /* Add space between sliders and color picker */
   }
 
   .slider {
@@ -33,13 +34,11 @@
     align-items: center;
     justify-content: space-between;
   }
-  /* Element: slider's range input */
 
   .slider__input--range {
     flex-grow: 1;
     margin: 0 16px;
   }
-  /* Element: slider's color input */
 
   .slider__input--color {
     border: none;
@@ -47,7 +46,6 @@
     padding: 4px;
     cursor: pointer;
   }
-  /* Element: slider's text */
 
   .slider__text {
     margin: 0;
