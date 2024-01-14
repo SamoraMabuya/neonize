@@ -1,7 +1,7 @@
 "use strict";
 
 figma.showUI(__html__);
-figma.ui.resize(400, 220);
+figma.ui.resize(400, 280);
 
 function createNeonizeGroupWithDuplicates(node: SceneNode): GroupNode | null {
   if (!node.parent) {
@@ -164,25 +164,35 @@ figma.on("run", () => {
   updateUIColorFromSelection();
   updatePluginUIFromSelectedNode();
 });
+
 figma.on("selectionchange", () => {
   const selectedNodes = figma.currentPage.selection;
-  if (selectedNodes.length > 0 && isNodeType(selectedNodes[0])) {
+
+  if (selectedNodes.length === 0 || !isNodeType(selectedNodes[0])) {
+    figma.ui.postMessage({ type: "reset-opacity-ui" });
     const node = selectedNodes[0];
+    const group = findNeonizeGroupForNode(node);
 
-    // Check if the node has been enhanced by the plugin
-    const intensityData = node.getPluginData("intensityValue");
+    if (group) {
+      // Retrieve the stored opacity value from the group's plugin data
+      const opacityValue = group.getPluginData("opacityValue");
 
-    if (intensityData === "true") {
-      // If enhanced, get the stored range value
-      const intensityValue = node.getPluginData("intensityData");
-      // Update UI with the stored range value
-      figma.ui.postMessage({ type: "update-range-ui", value: intensityValue });
+      // If there's a stored opacity value, update the UI with it
+      if (opacityValue) {
+        figma.ui.postMessage({
+          type: "update-opacity-ui",
+          value: opacityValue,
+        });
+      } else {
+        // No stored opacity value, reset the slider
+        figma.ui.postMessage({ type: "reset-opacity-ui" });
+      }
     } else {
-      // If not enhanced, reset the slider to 0
+      // If not enhanced, reset the sliders
       figma.ui.postMessage({ type: "reset-range-ui" });
     }
   } else {
-    // No valid node selected, reset the slider to 0
+    // No valid node selected, reset all sliders
     figma.ui.postMessage({ type: "reset-range-ui" });
   }
 });
@@ -314,6 +324,13 @@ function applySpreadEffects(node: SceneNode, value: number, color: RGBA) {
 figma.on("selectionchange", () => {
   updateUIColorFromSelection();
   updatePluginUIFromSelectedNode();
+
+  const selectedNodes = figma.currentPage.selection;
+
+  if (selectedNodes.length === 0 || !isNodeType(selectedNodes[0])) {
+    // No valid node selected, reset the opacity slider to 100
+    figma.ui.postMessage({ type: "reset-opacity-ui" });
+  }
 });
 
 function findIntensityDuplicate(node: SceneNode): SceneNode | null {
@@ -385,6 +402,14 @@ function updatePluginUIFromSelectedNode() {
         ? parseInt(spreadNode.getPluginData("spreadValue"))
         : 0;
       figma.ui.postMessage({ type: "update-spread-ui", value: spreadValue });
+
+      const opacityValue = group.getPluginData("opacityValue");
+
+      // Update opacity value
+      figma.ui.postMessage({
+        type: "update-opacity-ui",
+        value: opacityValue, // Default to 100 if not set
+      });
     }
   }
 }
@@ -513,6 +538,32 @@ figma.ui.onmessage = async (msg) => {
         if (group) {
           reorderNodesInGroup(group);
         }
+      }
+      break;
+    case "opacity-change":
+      const opacityValue = msg.value / 100; // Convert to a percentage
+      let targetSpreadNode = findSpreadNode();
+      let targetGroup = findNeonizeGroupForNode(figma.currentPage.selection[0]);
+
+      if (targetGroup) {
+        // Save the opacity value as plugin data
+        targetGroup.setPluginData("opacityValue", msg.value.toString());
+      }
+
+      // Apply the opa
+      if (targetSpreadNode && "effects" in targetSpreadNode) {
+        const newEffects = targetSpreadNode.effects.map((effect) => {
+          if (effect.type === "DROP_SHADOW") {
+            const newEffect: DropShadowEffect = {
+              ...effect,
+              color: { ...effect.color, a: opacityValue },
+            };
+
+            return newEffect;
+          }
+          return effect;
+        });
+        targetSpreadNode.effects = newEffects;
       }
       break;
   }

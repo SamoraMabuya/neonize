@@ -109,6 +109,21 @@
       value="0"
     />
   </div>
+
+  <br />
+  <!-- Opacity Slider -->
+  <div class="slider">
+    <label for="opacity" class="slider__text">Opacity:</label>
+    <input
+      id="opacity"
+      class="slider__input slider__input--range"
+      type="range"
+      min="0"
+      max="100"
+      value="100"
+    />
+  </div>
+
   <br />
 
   <!-- Color Pickers -->
@@ -139,6 +154,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       const intensityInput = document.getElementById('intensity')
       const spreadInput = document.getElementById('spread')
+      const opacityInput = document.getElementById('opacity')
+
       const intensityColorPicker = document.getElementById(
         'intensityColorPicker',
       )
@@ -182,6 +199,19 @@
         )
       })
 
+      opacityInput.addEventListener('input', () => {
+        const opacityValue = opacityInput.value
+        parent.postMessage(
+          {
+            pluginMessage: {
+              type: 'opacity-change',
+              value: opacityValue,
+            },
+          },
+          '*',
+        )
+      })
+
       spreadColorPicker.addEventListener('input', () => {
         parent.postMessage(
           {
@@ -218,12 +248,16 @@
       if (type === 'reset-range-ui') {
         document.getElementById('intensity').value = 0
         document.getElementById('spread').value = 0
+        document.getElementById('opacity').value = 100
       }
       if (type === 'update-intensityColor-ui') {
         document.getElementById('intensityColorPicker').value = color
       }
       if (type === 'update-spreadColor-ui') {
         document.getElementById('spreadColorPicker').value = color
+      }
+      if (type === 'update-opacity-ui') {
+        document.getElementById('opacity').value = Number(value)
       }
     }
   </script>
