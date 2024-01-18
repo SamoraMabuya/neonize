@@ -1,6 +1,6 @@
 "use strict";
 figma.showUI(__html__);
-figma.ui.resize(400, 280);
+figma.ui.resize(400, 335);
 function createNeonizeGroupWithDuplicates(node) {
     if (!node.parent) {
         figma.notify("Cannot group nodes: the selected node has no parent.");
@@ -60,6 +60,7 @@ function reselectCurrentNode() {
         }, 150);
     }
 }
+// limit
 function updateUIColorFromSelection() {
     const selectedNodes = figma.currentPage.selection;
     if (selectedNodes.length > 0 && isNodeType(selectedNodes[0])) {
@@ -119,6 +120,15 @@ function updateUIColorFromSelection() {
         }
     }
 }
+figma.on("close", async () => {
+    try {
+        await figma.clientStorage.setAsync("usageCount", 0);
+        figma.notify("Usage count has been reset.");
+    }
+    catch (error) {
+        console.error("Error resetting usage count:", error);
+    }
+});
 figma.on("run", () => {
     reselectCurrentNode();
     updateUIColorFromSelection();
@@ -178,6 +188,7 @@ function findGroupWithOriginalNode(node) {
 }
 // Updated to check all parent nodes for an existing "Neonize Group"
 // selectionchange listener
+//
 function createIntensityDuplicate(node, group) {
     if (!node.parent) {
         figma.notify("Cannot create spread duplicate: the selected node has no parent.");
@@ -192,6 +203,7 @@ function createIntensityDuplicate(node, group) {
     }
     return intensityDuplicate;
 }
+// limit
 function createSpreadDuplicate(node, group) {
     if (!node.parent) {
         figma.notify("Cannot create spread duplicate: the selected node has no parent.");
@@ -209,7 +221,9 @@ function createSpreadDuplicate(node, group) {
     return spreadDuplicate;
 }
 let intensityColor = { r: 1, g: 1, b: 1, a: 1 };
-function applyIntensityEffects(node, processedOpacity, color, rawIntensityValue) {
+let hasChanged = false;
+// limit
+async function applyIntensityEffects(node, processedOpacity, color, rawIntensityValue) {
     if ("effects" in node) {
         const effects = [];
         for (let i = 0; i < 10; i++) {
@@ -229,7 +243,8 @@ function applyIntensityEffects(node, processedOpacity, color, rawIntensityValue)
     node.setPluginData("intensityValue", rawIntensityValue.toString()); // Save the raw slider value
 }
 let spreadColor = { r: 1, g: 1, b: 1, a: 1 };
-function applySpreadEffects(node, value, color) {
+// limit
+async function applySpreadEffects(node, value, color) {
     if ("effects" in node) {
         const effects = [];
         for (let i = 0; i < 10; i++) {
@@ -293,6 +308,7 @@ function reorderNodesInGroup(group) {
         group.insertChild(0, spreadNode);
     }
 }
+// limit
 function updatePluginUIFromSelectedNode() {
     const selectedNodes = figma.currentPage.selection;
     if (selectedNodes.length > 0) {
@@ -337,9 +353,45 @@ function findSpreadNode() {
     }
     return null;
 }
+// Async function to get the current usage count from Figma's client storage
+async function getUsageCount() {
+    try {
+        // Retrieve the stored usage count using the key 'usageCount'
+        const usageCount = await figma.clientStorage.getAsync("usageCount");
+        // If there's no stored value, return 0
+        return usageCount !== null && usageCount !== void 0 ? usageCount : 0;
+    }
+    catch (error) {
+        console.error("Error getting usage count:", error);
+        return 0; // Return 0 in case of any error
+    }
+}
+// Async function to set the new usage count in Figma's client storage
+async function setUsageCount(count) {
+    try {
+        // Update the stored usage count with the new value
+        await figma.clientStorage.setAsync("usageCount", count);
+    }
+    catch (error) {
+        console.error("Error setting usage count:", error);
+    }
+}
 figma.ui.onmessage = async (msg) => {
     const selectedNodes = figma.currentPage.selection;
+    const MAX_FREE_USAGE = 40; // Maximum neonization actions in the free version for testing
     switch (msg.type) {
+        case "decrement-credit":
+            // Perform the logic to decrement credits here
+            const usageCount = await getUsageCount();
+            if (usageCount < MAX_FREE_USAGE) {
+                await setUsageCount(usageCount + 1);
+                figma.ui.postMessage({
+                    type: "update-credits",
+                    creditsLeft: MAX_FREE_USAGE - usageCount - 1,
+                });
+                // No need for figma.notify unless you want additional user feedback
+            }
+            break;
         case "intensityColor-change":
             intensityColor = hexToRgb(msg.color);
             const intensityNode = findIntensityNode();
@@ -390,14 +442,15 @@ figma.ui.onmessage = async (msg) => {
                 }
                 // Apply intensity effects
                 if (intensityNode) {
-                    applyIntensityEffects(intensityNode, intensityValue / 100, intensityColor, intensityValue); // Assuming intensityColor is defined elsewhere
+                    applyIntensityEffects(intensityNode, intensityValue / 100, intensityColor, intensityValue);
+                    // Assuming intensityColor is defined elsewhere
                     if (group) {
                         reorderNodesInGroup(group);
                     }
                 }
             }
             break;
-        case "size-change":
+        case "spread-change":
             const spreadValue = parseInt(msg.value);
             let group = findNeonizeGroupForNode(selectedNodes[0]);
             // Create group with duplicates if it doesn't exist
@@ -421,11 +474,11 @@ figma.ui.onmessage = async (msg) => {
             const opacityValue = msg.value / 100; // Convert to a percentage
             let targetSpreadNode = findSpreadNode();
             let targetGroup = findNeonizeGroupForNode(figma.currentPage.selection[0]);
+            // limit
             if (targetGroup) {
                 // Save the opacity value as plugin data
                 targetGroup.setPluginData("opacityValue", msg.value.toString());
             }
-            // Apply the opa
             if (targetSpreadNode && "effects" in targetSpreadNode) {
                 const newEffects = targetSpreadNode.effects.map((effect) => {
                     if (effect.type === "DROP_SHADOW") {
