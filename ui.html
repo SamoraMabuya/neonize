@@ -301,7 +301,9 @@
       }
       if (type === 'update-credits') {
         const creditsRemaining = document.getElementById('creditsRemaining')
-        creditsRemaining.value = creditsLeft.toString()
+        if (creditsRemaining) {
+          creditsRemaining.value = creditsLeft.toString()
+        }
       }
     }
   </script>

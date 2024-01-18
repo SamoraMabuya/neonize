@@ -120,15 +120,6 @@ function updateUIColorFromSelection() {
         }
     }
 }
-figma.on("close", async () => {
-    try {
-        await figma.clientStorage.setAsync("usageCount", 0);
-        figma.notify("Usage count has been reset.");
-    }
-    catch (error) {
-        console.error("Error resetting usage count:", error);
-    }
-});
 figma.on("run", () => {
     reselectCurrentNode();
     updateUIColorFromSelection();
@@ -379,10 +370,10 @@ async function setUsageCount(count) {
 figma.ui.onmessage = async (msg) => {
     const selectedNodes = figma.currentPage.selection;
     const MAX_FREE_USAGE = 40; // Maximum neonization actions in the free version for testing
+    let usageCount = await getUsageCount();
     switch (msg.type) {
         case "decrement-credit":
             // Perform the logic to decrement credits here
-            const usageCount = await getUsageCount();
             if (usageCount < MAX_FREE_USAGE) {
                 await setUsageCount(usageCount + 1);
                 figma.ui.postMessage({
@@ -412,6 +403,11 @@ figma.ui.onmessage = async (msg) => {
             }
             break;
         case "ui-ready":
+            const creditsLeft = MAX_FREE_USAGE - usageCount;
+            figma.ui.postMessage({
+                type: "update-credits",
+                creditsLeft: creditsLeft,
+            });
             updateUIColorFromSelection();
             break;
         case "intensity-change":
