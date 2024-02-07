@@ -7,6 +7,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
+  <script src="https://js.stripe.com/v3/"></script>
 </head>
 <style>
   body {
@@ -86,8 +87,36 @@
     margin-top: 10px;
     /* Adjust as needed */
   }
+
+  .upgrade-container {
+    margin-top: 16px;
+    /* Adjust spacing as needed */
+    text-align: center;
+    /* Center the button if preferred */
+  }
+
+  .button--primary {
+    /* Use styles from figma-plugin-ds or customize as needed */
+    background-color: #18a0fb;
+    /* Figma primary button color */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .button--primary:hover {
+    /* Slight change on hover for visual feedback */
+    background-color: #0c7bdc;
+  }
 </style>
 <div>
+  <div class="upgrade-container">
+    <button id="upgrade-button" class="button button--primary">Upgrade</button>
+  </div>
   <div class="credits-info">
     <label for="creditsRemaining">Credits remaining:</label>
     <input type="text" id="creditsRemaining" readonly value="40" />
@@ -165,6 +194,52 @@
       const spreadInput = document.getElementById('spread')
       const opacityInput = document.getElementById('opacity')
 
+      const stripe = Stripe(
+        'pk_test_51Oagz9DBbUQVIMWM4xP2gxVuTybffiKnJ4D9Nra0fz6s8oOWSaWWkkKgHIsfifIuPyikSwVR9CQxc1Ub8PaQuBvD00cf1CVon6',
+      )
+
+      document.addEventListener('DOMContentLoaded', () => {
+        document
+          .getElementById('upgrade-button')
+          .addEventListener('click', function () {
+            fetch('http://localhost:3000/api/payments/create-subscription', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                priceId: 'price_1OdCeADBbUQVIMWMUoqTWn8i',
+              }),
+            })
+              .then((response) => {
+                if (!response.ok) {
+                  throw new Error(
+                    `Network response was not ok, status: ${response.status}`,
+                  )
+                }
+                return response.json()
+              })
+              .then((data) => {
+                if (!data.sessionId) {
+                  throw new Error('Session ID is missing in the response')
+                }
+                return stripe.redirectToCheckout({
+                  sessionId: data.sessionId,
+                })
+              })
+              .then((result) => {
+                if (result.error) {
+                  alert(result.error.message)
+                }
+              })
+              .catch((error) => {
+                console.error('Error:', error)
+                alert(
+                  'An error occurred while redirecting to the Stripe checkout page.',
+                )
+              })
+          })
+      })
       const intensityColorPicker = document.getElementById(
         'intensityColorPicker',
       )
@@ -277,33 +352,46 @@
     }
 
     window.onmessage = (event) => {
-      const { type, value, color, creditsLeft } = event.data.pluginMessage
+      if (event.origin !== ' http://localhost:3000') {
+        return
+      }
+      if (event.data && event.data.pluginMessage) {
+        const { type, value, color, creditsLeft } = event.data.pluginMessage
 
-      if (type === 'update-intensity-ui') {
-        document.getElementById('intensity').value = value
-      }
-      if (type === 'update-spread-ui') {
-        document.getElementById('spread').value = value
-      }
-      if (type === 'reset-range-ui') {
-        document.getElementById('intensity').value = 0
-        document.getElementById('spread').value = 0
-        document.getElementById('opacity').value = 100
-      }
-      if (type === 'update-intensityColor-ui') {
-        document.getElementById('intensityColorPicker').value = color
-      }
-      if (type === 'update-spreadColor-ui') {
-        document.getElementById('spreadColorPicker').value = color
-      }
-      if (type === 'update-opacity-ui') {
-        document.getElementById('opacity').value = Number(value)
-      }
-      if (type === 'update-credits') {
-        const creditsRemaining = document.getElementById('creditsRemaining')
-        if (creditsRemaining) {
-          creditsRemaining.value = creditsLeft.toString()
+        console.log('data', event.data)
+        console.log('value', value)
+
+        if (type === 'update-intensity-ui') {
+          document.getElementById('intensity').value = value
         }
+        if (type === 'update-spread-ui') {
+          document.getElementById('spread').value = value
+        }
+        if (type === 'reset-range-ui') {
+          document.getElementById('intensity').value = 0
+          document.getElementById('spread').value = 0
+          document.getElementById('opacity').value = 100
+        }
+        if (type === 'update-intensityColor-ui') {
+          document.getElementById('intensityColorPicker').value = color
+        }
+        if (type === 'update-spreadColor-ui') {
+          document.getElementById('spreadColorPicker').value = color
+        }
+        if (type === 'update-opacity-ui') {
+          document.getElementById('opacity').value = Number(value)
+        }
+        if (type === 'update-credits') {
+          const creditsRemaining = document.getElementById('creditsRemaining')
+          if (creditsRemaining) {
+            creditsRemaining.value = creditsLeft.toString()
+          }
+        }
+      } else {
+        console.log(
+          'Received message without pluginMessage property',
+          event.data,
+        )
       }
     }
   </script>
