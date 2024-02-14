@@ -86,11 +86,23 @@
     margin-top: 10px;
     /* Adjust as needed */
   }
+
+  .upgrade-container {
+    margin-top: 20px;
+    /* Adjust the margin as needed */
+    text-align: center;
+    /* Center-align the button */
+  }
 </style>
 <div>
   <div class="credits-info">
     <label for="creditsRemaining">Credits remaining:</label>
     <input type="text" id="creditsRemaining" readonly value="40" />
+  </div>
+  <div class="upgrade-container">
+    <button id="upgradeButton" class="button button--primary">
+      Upgrade
+    </button>
   </div>
   <!-- Intensity Slider -->
   <div class="slider">
@@ -164,6 +176,48 @@
       const intensityInput = document.getElementById('intensity')
       const spreadInput = document.getElementById('spread')
       const opacityInput = document.getElementById('opacity')
+
+      // Assuming you have an "Upgrade" button in your plugin UI
+      document
+        .getElementById('upgradeButton')
+        .addEventListener('click', function () {
+          // Use the stored user token to fetch user data
+          const userToken = getUserToken() // Implement this function to retrieve the token
+
+          fetch('https://samoramabuya.com/api/get-user-data', {
+            method: 'GET', // or 'POST' if you're sending the token in the body
+            headers: {
+              Authorization: `Bearer ${userToken}`,
+              'Content-Type': 'application/json',
+            },
+          })
+            .then((response) => response.json())
+            .then((userData) => {
+              // Now that we have user data, request the PayPal subscription URL
+              return fetch(
+                'https://samoramabuya.com/api/paypal/create-subscription',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    planId: 'P-0TU03491DA613900VMXEIHTQ', // Your PayPal plan ID
+                    user: {
+                      firstName: userData.firstName, // Retrieved from your server
+                      lastName: userData.lastName, // Retrieved from your server
+                      email: userData.email, // Retrieved from your server
+                    },
+                  }),
+                },
+              )
+            })
+            .then((response) => response.json())
+            .then((data) => {
+              window.open(data.approvalUrl, '_blank')
+            })
+            .catch((error) => console.error('Error:', error))
+        })
 
       const intensityColorPicker = document.getElementById(
         'intensityColorPicker',
