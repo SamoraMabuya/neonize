@@ -7,6 +7,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
+  <script src="https://js.stripe.com/v3/"></script>
 </head>
 <style>
   body {
@@ -95,6 +96,9 @@
   }
 </style>
 <div>
+  <div class="upgrade-container">
+    <button id="upgrade-button" class="button button--primary">Upgrade</button>
+  </div>
   <div class="credits-info">
     <label for="creditsRemaining">Credits remaining:</label>
     <input type="text" id="creditsRemaining" readonly value="40" />
@@ -331,33 +335,46 @@
     }
 
     window.onmessage = (event) => {
-      const { type, value, color, creditsLeft } = event.data.pluginMessage
+      if (event.origin !== ' http://localhost:3000') {
+        return
+      }
+      if (event.data && event.data.pluginMessage) {
+        const { type, value, color, creditsLeft } = event.data.pluginMessage
 
-      if (type === 'update-intensity-ui') {
-        document.getElementById('intensity').value = value
-      }
-      if (type === 'update-spread-ui') {
-        document.getElementById('spread').value = value
-      }
-      if (type === 'reset-range-ui') {
-        document.getElementById('intensity').value = 0
-        document.getElementById('spread').value = 0
-        document.getElementById('opacity').value = 100
-      }
-      if (type === 'update-intensityColor-ui') {
-        document.getElementById('intensityColorPicker').value = color
-      }
-      if (type === 'update-spreadColor-ui') {
-        document.getElementById('spreadColorPicker').value = color
-      }
-      if (type === 'update-opacity-ui') {
-        document.getElementById('opacity').value = Number(value)
-      }
-      if (type === 'update-credits') {
-        const creditsRemaining = document.getElementById('creditsRemaining')
-        if (creditsRemaining) {
-          creditsRemaining.value = creditsLeft.toString()
+        console.log('data', event.data)
+        console.log('value', value)
+
+        if (type === 'update-intensity-ui') {
+          document.getElementById('intensity').value = value
         }
+        if (type === 'update-spread-ui') {
+          document.getElementById('spread').value = value
+        }
+        if (type === 'reset-range-ui') {
+          document.getElementById('intensity').value = 0
+          document.getElementById('spread').value = 0
+          document.getElementById('opacity').value = 100
+        }
+        if (type === 'update-intensityColor-ui') {
+          document.getElementById('intensityColorPicker').value = color
+        }
+        if (type === 'update-spreadColor-ui') {
+          document.getElementById('spreadColorPicker').value = color
+        }
+        if (type === 'update-opacity-ui') {
+          document.getElementById('opacity').value = Number(value)
+        }
+        if (type === 'update-credits') {
+          const creditsRemaining = document.getElementById('creditsRemaining')
+          if (creditsRemaining) {
+            creditsRemaining.value = creditsLeft.toString()
+          }
+        }
+      } else {
+        console.log(
+          'Received message without pluginMessage property',
+          event.data,
+        )
       }
     }
   </script>
