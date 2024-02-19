@@ -465,6 +465,15 @@ figma.ui.onmessage = async (msg) => {
   let usageCount = await getUsageCount();
 
   switch (msg.type) {
+    case "open-paypal-url":
+      // Assuming that the msg.url is the PayPal URL to open
+      if (msg.url) {
+        // This command tells Figma to open the URL in the default browser
+        figma.showUI(`<script>window.location.href="${msg.url}";</script>`, {
+          visible: false,
+        });
+      }
+      break;
     case "decrement-credit":
       // Perform the logic to decrement credits here
       if (usageCount < MAX_FREE_USAGE) {
