@@ -4,13 +4,14 @@
   "description": "Your Figma Plugin",
   "main": "code.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "watch": "npm run build -- --watch"
+    "build": "parcel build ui.html --dist-dir ./dist",
+    "watch": "parcel watch ui.html --dist-dir ./dist"
   },
   "author": "",
   "license": "",
   "devDependencies": {
     "@figma/plugin-typings": "^1.80.0",
+    "parcel": "^2.11.0",
     "typescript": "*"
   },
   "dependencies": {

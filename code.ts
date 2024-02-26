@@ -9,10 +9,8 @@ function createNeonizeGroupWithDuplicates(node: SceneNode): GroupNode | null {
     return null;
   }
 
-  // Rename the original node
   node.name = "Original";
 
-  // Create a group with the original node
   const group = figma.group([node], node.parent);
   group.name = "Neonize Group";
   node.setPluginData("isNeonized", "true");
@@ -26,12 +24,12 @@ function hexToRgb(hex: string): RGBA {
         r: parseInt(result[1], 16) / 255,
         g: parseInt(result[2], 16) / 255,
         b: parseInt(result[3], 16) / 255,
-        a: 1, // Full opacity
+        a: 1,
       }
-    : { r: 1, g: 1, b: 1, a: 1 }; // Default white
+    : { r: 1, g: 1, b: 1, a: 1 };
 }
 
-let currentColor: RGBA = { r: 1, g: 1, b: 1, a: 1 }; // Default color
+let currentColor: RGBA = { r: 1, g: 1, b: 1, a: 1 };
 
 type ValidNodeType =
   | RectangleNode
@@ -174,25 +172,20 @@ figma.on("selectionchange", () => {
     const group = findNeonizeGroupForNode(node);
 
     if (group) {
-      // Retrieve the stored opacity value from the group's plugin data
       const opacityValue = group.getPluginData("opacityValue");
 
-      // If there's a stored opacity value, update the UI with it
       if (opacityValue) {
         figma.ui.postMessage({
           type: "update-opacity-ui",
           value: opacityValue,
         });
       } else {
-        // No stored opacity value, reset the slider
         figma.ui.postMessage({ type: "reset-opacity-ui" });
       }
     } else {
-      // If not enhanced, reset the sliders
       figma.ui.postMessage({ type: "reset-range-ui" });
     }
   } else {
-    // No valid node selected, reset all sliders
     figma.ui.postMessage({ type: "reset-range-ui" });
   }
 });
@@ -223,11 +216,6 @@ function findGroupWithOriginalNode(node: SceneNode): GroupNode | null {
   return null;
 }
 
-// Updated to check all parent nodes for an existing "Neonize Group"
-
-// selectionchange listener
-
-//
 function createIntensityDuplicate(
   node: SceneNode,
   group: GroupNode
@@ -249,7 +237,6 @@ function createIntensityDuplicate(
   return intensityDuplicate;
 }
 
-// limit
 function createSpreadDuplicate(
   node: SceneNode,
   group: GroupNode | null
@@ -261,13 +248,11 @@ function createSpreadDuplicate(
     return null;
   }
 
-  // Clone the original node and name it "Spread"
   const spreadDuplicate = node.clone();
   spreadDuplicate.name = "Spread";
   spreadDuplicate.x = node.x;
   spreadDuplicate.y = node.y;
 
-  // If a group already exists, add the spread duplicate to it
   if (group) {
     group.appendChild(spreadDuplicate);
   }
@@ -277,7 +262,6 @@ function createSpreadDuplicate(
 let intensityColor: RGBA = { r: 1, g: 1, b: 1, a: 1 };
 let hasChanged = false;
 
-// limit
 async function applyIntensityEffects(
   node: SceneNode,
   processedOpacity: number,
@@ -333,16 +317,13 @@ figma.on("selectionchange", () => {
   const selectedNodes = figma.currentPage.selection;
 
   if (selectedNodes.length === 0 || !isNodeType(selectedNodes[0])) {
-    // No valid node selected, reset the opacity slider to 100
     figma.ui.postMessage({ type: "reset-opacity-ui" });
   }
 });
 
 function findIntensityDuplicate(node: SceneNode): SceneNode | null {
-  // Find the Neonize Group containing the original node
   let group = findNeonizeGroupForNode(node);
 
-  // Search for the "Intensity" clone within the group
   if (group) {
     return group.findOne((n) => n.name === "Intensity") as SceneNode | null;
   }
@@ -350,10 +331,8 @@ function findIntensityDuplicate(node: SceneNode): SceneNode | null {
   return null;
 }
 function findSpreadDuplicate(node: SceneNode): SceneNode | null {
-  // Find the Neonize Group containing the original node
   let group = findNeonizeGroupForNode(node);
 
-  // Search for the "Spread" clone within the group
   if (group) {
     return group.findOne((n) => n.name === "Spread") as SceneNode | null;
   }
@@ -368,12 +347,10 @@ function reorderNodesInGroup(group: GroupNode): void {
   const intensityNode = group.findOne((n) => n.name === "Intensity");
   const spreadNode = group.findOne((n) => n.name === "Spread");
 
-  // Remove all nodes from the group
   group.children.forEach((child) => {
     group.appendChild(child);
   });
 
-  // Add nodes back in the desired order
   if ((originalNode && intensityNode) || (originalNode && spreadNode)) {
     group.insertChild(1, originalNode);
   }
@@ -383,7 +360,6 @@ function reorderNodesInGroup(group: GroupNode): void {
     group.insertChild(0, spreadNode);
   }
 }
-// limit
 function updatePluginUIFromSelectedNode() {
   const selectedNodes = figma.currentPage.selection;
   if (selectedNodes.length > 0) {
@@ -394,7 +370,6 @@ function updatePluginUIFromSelectedNode() {
       const intensityNode = group.findOne((n) => n.name === "Intensity");
       const spreadNode = group.findOne((n) => n.name === "Spread");
 
-      // Update intensity value
       const intensityValue = intensityNode
         ? parseInt(intensityNode.getPluginData("intensityValue"))
         : 0;
@@ -403,7 +378,6 @@ function updatePluginUIFromSelectedNode() {
         value: intensityValue,
       });
 
-      // Update spread value
       const spreadValue = spreadNode
         ? parseInt(spreadNode.getPluginData("spreadValue"))
         : 0;
@@ -411,10 +385,9 @@ function updatePluginUIFromSelectedNode() {
 
       const opacityValue = group.getPluginData("opacityValue");
 
-      // Update opacity value
       figma.ui.postMessage({
         type: "update-opacity-ui",
-        value: opacityValue, // Default to 100 if not set
+        value: opacityValue,
       });
     }
   }
@@ -436,23 +409,18 @@ function findSpreadNode(): SceneNode | null {
   return null;
 }
 
-// Async function to get the current usage count from Figma's client storage
 async function getUsageCount(): Promise<number> {
   try {
-    // Retrieve the stored usage count using the key 'usageCount'
     const usageCount = await figma.clientStorage.getAsync("usageCount");
-    // If there's no stored value, return 0
     return usageCount ?? 0;
   } catch (error) {
     console.error("Error getting usage count:", error);
-    return 0; // Return 0 in case of any error
+    return 0;
   }
 }
 
-// Async function to set the new usage count in Figma's client storage
 async function setUsageCount(count: number): Promise<void> {
   try {
-    // Update the stored usage count with the new value
     await figma.clientStorage.setAsync("usageCount", count);
   } catch (error) {
     console.error("Error setting usage count:", error);
@@ -461,46 +429,73 @@ async function setUsageCount(count: number): Promise<void> {
 
 figma.ui.onmessage = async (msg) => {
   const selectedNodes = figma.currentPage.selection;
-  const MAX_FREE_USAGE = 40; // Maximum neonization actions in the free version for testing
+  const MAX_FREE_USAGE = 40;
   let usageCount = await getUsageCount();
 
   switch (msg.type) {
     case "open-paypal-url":
-      // Assuming that the msg.url is the PayPal URL to open
       if (msg.url) {
-        // This command tells Figma to open the URL in the default browser
         figma.showUI(`<script>window.location.href="${msg.url}";</script>`, {
           visible: false,
         });
       }
       break;
     case "decrement-credit":
-      // Perform the logic to decrement credits here
-      if (usageCount < MAX_FREE_USAGE) {
-        await setUsageCount(usageCount + 1);
+      // Increment the usage count each time a credit is used
+      usageCount += 1;
+      await setUsageCount(usageCount); // Update the stored usage count
+
+      // Check if the user has exceeded their 40 free credits
+      if (usageCount >= 40) {
+        // User has used their 40 free credits; initiate checkout flow
+        figma.notify(
+          "Free credits used up. Please upgrade for unlimited access."
+        );
+        // Here, you could also trigger the UI to display the upgrade button or directly initiate the checkout process
+        figma.ui.postMessage({ type: "initiate-checkout" });
+      } else {
+        // Update the UI with the remaining credits
+        const creditsLeft = 40 - usageCount;
         figma.ui.postMessage({
           type: "update-credits",
-          creditsLeft: MAX_FREE_USAGE - usageCount - 1,
+          creditsLeft: creditsLeft,
         });
-        // No need for figma.notify unless you want additional user feedback
       }
       break;
+    case "initiate-checkout":
+      // Check if the Payments API is available
+      if (figma.payments) {
+        // Logic to initiate the checkout flow
+        try {
+          await figma.payments.initiateCheckoutAsync({
+            // Your checkout details here, such as productID or other relevant information
+          });
+          // Handle post-checkout logic, perhaps checking the payment status again
+        } catch (error) {
+          console.error("Checkout initiation failed:", error);
+          // Handle errors, such as by notifying the user or logging the issue
+        }
+      } else {
+        console.error("Payments API is not available.");
+        // Optionally, notify the user that the checkout process cannot be initiated
+        figma.notify("Unable to initiate checkout. Please try again later.");
+      }
+      break;
+
     case "intensityColor-change":
       intensityColor = hexToRgb(msg.color);
 
       const intensityNode = findIntensityNode();
       if (intensityNode) {
-        // Retrieve the raw intensity value stored in the plugin data
         const rawIntensityValue = parseInt(
           intensityNode.getPluginData("intensityValue")
         );
 
-        // Pass the raw intensity value directly to applyIntensityEffects
         applyIntensityEffects(
           intensityNode,
-          rawIntensityValue / 100, // Convert to a percentage for opacity
+          rawIntensityValue / 100,
           intensityColor,
-          rawIntensityValue // Pass the raw slider value
+          rawIntensityValue
         );
       }
       break;
@@ -525,17 +520,15 @@ figma.ui.onmessage = async (msg) => {
       updateUIColorFromSelection();
       break;
     case "intensity-change":
-      const intensityValue = parseInt(msg.value); // Directly use the received value
+      const intensityValue = parseInt(msg.value);
       let selectedNode = selectedNodes[0];
 
       if (
         selectedNode.type === "GROUP" &&
         selectedNode.name === "Neonize Group"
       ) {
-        // Find the intensity node within the group
         const intensityNodeInGroup = findIntensityNode();
 
-        // If found, select this node
         if (intensityNodeInGroup) {
           figma.currentPage.selection = [intensityNodeInGroup];
           selectedNode = intensityNodeInGroup;
@@ -545,7 +538,6 @@ figma.ui.onmessage = async (msg) => {
       if (selectedNode && isNodeType(selectedNode)) {
         let group = findNeonizeGroupForNode(selectedNodes[0]);
 
-        // Create group with duplicates if it doesn't exist
         if (
           !group &&
           selectedNodes.length > 0 &&
@@ -553,13 +545,11 @@ figma.ui.onmessage = async (msg) => {
         ) {
           group = createNeonizeGroupWithDuplicates(selectedNodes[0]);
         }
-        // Find or create intensity node
         let intensityNode = findIntensityDuplicate(selectedNode);
         if (!intensityNode && group) {
           intensityNode = createIntensityDuplicate(selectedNode, group);
         }
 
-        // Apply intensity effects
         if (intensityNode) {
           applyIntensityEffects(
             intensityNode,
@@ -567,7 +557,6 @@ figma.ui.onmessage = async (msg) => {
             intensityColor,
             intensityValue
           );
-          // Assuming intensityColor is defined elsewhere
           if (group) {
             reorderNodesInGroup(group);
           }
@@ -578,18 +567,15 @@ figma.ui.onmessage = async (msg) => {
       const spreadValue = parseInt(msg.value);
       let group = findNeonizeGroupForNode(selectedNodes[0]);
 
-      // Create group with duplicates if it doesn't exist
       if (!group && selectedNodes.length > 0 && isNodeType(selectedNodes[0])) {
         group = createNeonizeGroupWithDuplicates(selectedNodes[0]);
       }
 
-      // Find existing spread node or create one if it doesn't exist
       let spreadNode = findSpreadDuplicate(selectedNodes[0]);
       if (!spreadNode && group) {
         spreadNode = createSpreadDuplicate(selectedNodes[0], group);
       }
 
-      // Apply spread effects
       if (spreadNode) {
         applySpreadEffects(spreadNode, spreadValue, spreadColor);
         if (group) {
@@ -598,13 +584,11 @@ figma.ui.onmessage = async (msg) => {
       }
       break;
     case "opacity-change":
-      const opacityValue = msg.value / 100; // Convert to a percentage
+      const opacityValue = msg.value / 100;
       let targetSpreadNode = findSpreadNode();
       let targetGroup = findNeonizeGroupForNode(figma.currentPage.selection[0]);
 
-      // limit
       if (targetGroup) {
-        // Save the opacity value as plugin data
         targetGroup.setPluginData("opacityValue", msg.value.toString());
       }
 

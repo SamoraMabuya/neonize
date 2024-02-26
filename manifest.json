@@ -1,25 +1,24 @@
 {
-  "name": "neonize",
-  "id": "1300043926906272268",
-  "api": "1.0.0",
-  "main": "code.js",
-  "capabilities": [],
-  "enableProposedApi": false,
-  "editorType": ["figma"],
-  "ui": "ui.html",
-  "networkAccess": {
-    "allowedDomains": [
-      "http://localhost:3000",
-      "https://js.stripe.com",
-      "https://fonts.googleapis.com",
-      "https://js.stripe.com/v3/",
-      "https://fonts.gstatic.com"
-    ],
-    "reasoning": "Needed for development and testing purposes with local server"
-  },
+    "name": "neonize",
+    "id": "1300043926906272268",
+    "api": "1.0.0",
+    "main": "code.js",
+    "capabilities": [],
+    "enableProposedApi": false,
+    "editorType": ["figma"],
+    "ui": "ui.html",
+    "permissions": ["payments"],
+    "networkAccess": {
+        "allowedDomains": [
+            "http://localhost:3000",
+            "https://fonts.googleapis.com",
+            "https://fonts.gstatic.com"
+        ],
+        "reasoning": "Needed for development and testing purposes with local server"
+    },
 
-  "relaunchButtons": [
-    { "command": "edit", "name": "Edit shape" },
-    { "command": "open", "name": "Open Shaper", "multipleSelection": true }
-  ]
+    "relaunchButtons": [
+        { "command": "edit", "name": "Edit shape" },
+        { "command": "open", "name": "Open Shaper", "multipleSelection": true }
+    ]
 }
