@@ -1,378 +1,273 @@
 <head>
-  <link
-    rel="stylesheet"
-    href="../../node_modules/figma-plugin-ds/dist/figma-plugin-ds.css"
-  />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-    rel="stylesheet"
-  />
-  <script src="https://js.stripe.com/v3/"></script>
+    <link rel="stylesheet" href="../../node_modules/figma-plugin-ds/dist/figma-plugin-ds.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 </head>
+
 <style>
-  body {
-    font-family: 'Inter', sans-serif;
-    overflow: hidden;
-  }
-
-  .color-picker-container {
-    background: #ffffff;
-    border: 1px solid #e5e5e5;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    padding: 16px;
-    display: flex;
-    align-items: center;
-  }
-
-  .slider {
-    background: #ffffff;
-    border: 1px solid #e5e5e5;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .slider__input--range {
-    flex-grow: 1;
-    margin: 0 16px;
-  }
-
-  .slider__input--color {
-    border: none;
-    border-radius: 4px;
-    padding: 4px;
-    cursor: pointer;
-  }
-
-  .slider__text {
-    margin: 0;
-    color: #333333;
-    font-size: 14px;
-  }
-  /* Block: image-container */
-
-  .image-container {
-    margin-top: 20px;
-    width: 100%;
-    padding: 8px;
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  }
-  /* Element: image inside image-container */
-
-  .image-container__image {
-    width: 100%;
-    height: fit-content;
-  }
-
-  .color-picker-container {
-    display: flex;
-    justify-content: space-between;
-    /* Other styles */
-  }
-
-  .color-picker-group {
-    display: flex;
-    align-items: center;
-  }
-
-  .credits-info {
-    display: flex;
-    align-items: center;
-    margin-top: 10px;
-    /* Adjust as needed */
-  }
-
-  .upgrade-container {
-    margin-top: 20px;
-    /* Adjust the margin as needed */
-    text-align: center;
-    /* Center-align the button */
-  }
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .slider-group {
+        border: none;
+    }
+    
+    .slider-input {
+        flex-grow: 1;
+        margin: 0 16px;
+    }
+    
+    .slider,
+    .colorpicker-group {
+        background: #ffffff;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    
+    label {
+        margin: 0;
+        color: #333333;
+        font-size: 0.8em;
+        font-weight: 400;
+    }
+    
+    .colorpicker-input {
+        display: block;
+        margin-top: 4px;
+    }
 </style>
 
-<div>
-  <div class="upgrade-container">
-    <button id="upgrade-button" class="button button--primary">Upgrade</button>
-  </div>
-  <div class="credits-info">
-    <label for="creditsRemaining">Credits remaining:</label>
-    <input type="text" id="creditsRemaining" readonly value="40" />
-  </div>
-  <div class="upgrade-container">
-    <a
-      id="upgradeButton"
-      class="button button--primary"
-      href="#"
-      style="text-decoration: none; color: inherit;"
-    >
-      Upgrade
-    </a>
-  </div>
-  <!-- Intensity Slider -->
-  <div class="slider">
-    <label for="intensity" class="slider__text">Intensity:</label>
-    <input
-      id="intensity"
-      class="slider__input slider__input--range"
-      type="range"
-      min="0"
-      max="100"
-      value="0"
-    />
-  </div>
-  <br />
+<body>
+    <fieldset class="slider-group">
+        <!-- Intensity Slider -->
+        <div class="slider">
+            <label for="intensity-slider" class="slider-label">Intensity:</label>
+            <input id="intensity-slider" class="slider-input" type="range" min="0" max="100" value="0" />
+        </div>
+        <!-- Size/Spread Slider -->
+        <div class="slider">
+            <label for="spread-slider" class="slider-label">Size:</label>
+            <input id="spread-slider" class="slider-input" type="range" min="0" max="100" value="0" />
+        </div>
+        <!-- Opacity Slider -->
+        <div class="slider">
+            <label for="opacity-slider" class="slider-label">Opacity:</label>
+            <input id="opacity-slider" class="slider-input" type="range" min="0" max="100" value="100" />
+        </div>
+    </fieldset>
 
-  <!-- Size/Spread Slider -->
-  <div class="slider">
-    <label for="spread" class="slider__text">Size:</label>
-    <input
-      id="spread"
-      class="slider__input slider__input--range"
-      type="range"
-      min="0"
-      max="100"
-      value="0"
-    />
-  </div>
-
-  <br />
-  <!-- Opacity Slider -->
-  <div class="slider">
-    <label for="opacity" class="slider__text">Opacity:</label>
-    <input
-      id="opacity"
-      class="slider__input slider__input--range"
-      type="range"
-      min="0"
-      max="100"
-      value="100"
-    />
-  </div>
-
-  <br />
-
-  <!-- Color Pickers -->
-  <div class="color-picker-container">
-    <div class="color-picker-group">
-      <label for="intensityColorPicker" class="slider__text">
-        Intensity Color:
+    <!-- Color Pickers -->
+    <fieldset class="colorpicker-group">
+        <!-- Intensity Color Picker -->
+        <div class="colorpicker">
+            <label for="intensity-colorpicker" class="label">
+        Intensity
       </label>
-      <input
-        id="intensityColorPicker"
-        class="slider__input slider__input--color"
-        type="color"
-        value="#ffffff"
-      />
-    </div>
-    <div class="color-picker-group">
-      <label for="spreadColorPicker" class="slider__text">Spread Color:</label>
-      <input
-        id="spreadColorPicker"
-        class="slider__input slider__input--color"
-        type="color"
-        value="#ffffff"
-      />
-    </div>
-  </div>
+            <input id="intensity-colorpicker" class="colorpicker-input" type="color" value="#ffffff" />
+        </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const intensityInput = document.getElementById('intensity')
-      const spreadInput = document.getElementById('spread')
-      const opacityInput = document.getElementById('opacity')
-      document
-        .getElementById('upgradeButton')
-        .addEventListener('click', function (event) {
-          // Prevent default action if the href hasn't been updated yet
-          event.preventDefault()
+        <div class="colorpicker">
+            <label for="spread-colorpicker" class="label">Spread</label>
+            <input id="spreadColorPicker" class="colorpicker-input" type="color" value="#ffffff" />
+        </div>
+    </fieldset>
 
-          // Retrieve the user token and fetch user data
-          figma.clientStorage.getAsync('userToken').then((userToken) => {
-            if (userToken) {
-              fetch('https://samoramabuya.com/api/paypal/create-subscription', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${userToken}`,
-                },
-                body: JSON.stringify({
-                  planId: 'P-0TU03491DA613900VMXEIHTQ', // Your PayPal plan ID
-                }),
-              })
-                .then((response) => response.json())
-                .then((data) => {
-                  // Update the href attribute with the PayPal URL
-                  const upgradeButton = document.getElementById('upgradeButton')
-                  upgradeButton.href = data.approvalUrl
-                  // Optionally, trigger the navigation immediately
-                  window.location.href = data.approvalUrl
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const intensityInput = document.getElementById('intensity')
+            const spreadInput = document.getElementById('spread')
+            const opacityInput = document.getElementById('opacity')
+            document
+                .getElementById('upgradeButton')
+                .addEventListener('click', function(event) {
+                    // Prevent default action if the href hasn't been updated yet
+                    event.preventDefault()
+
+                    // Retrieve the user token and fetch user data
+                    figma.clientStorage.getAsync('userToken').then((userToken) => {
+                        if (userToken) {
+                            fetch('https://samoramabuya.com/api/paypal/create-subscription', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        Authorization: `Bearer ${userToken}`,
+                                    },
+                                    body: JSON.stringify({
+                                        planId: 'P-0TU03491DA613900VMXEIHTQ', // Your PayPal plan ID
+                                    }),
+                                })
+                                .then((response) => response.json())
+                                .then((data) => {
+                                    // Update the href attribute with the PayPal URL
+                                    const upgradeButton = document.getElementById('upgradeButton')
+                                    upgradeButton.href = data.approvalUrl
+                                        // Optionally, trigger the navigation immediately
+                                    window.location.href = data.approvalUrl
+                                })
+                                .catch((error) => console.error('Error:', error))
+                        } else {
+                            console.error('User token is not available.')
+                        }
+                    })
                 })
-                .catch((error) => console.error('Error:', error))
-            } else {
-              console.error('User token is not available.')
-            }
-          })
+
+            const intensityColorPicker = document.getElementById(
+                'intensityColorPicker',
+            )
+            const spreadColorPicker = document.getElementById('spreadColorPicker')
+
+            let isDragging = false
+            let initialValue = null
+
+            document.addEventListener('mousedown', (e) => {
+                if (e.target.type === 'range') {
+                    isDragging = true
+                    initialValue = e.target.value
+                }
+            })
+
+            document.addEventListener('mouseup', (e) => {
+                if (
+                    isDragging &&
+                    e.target.type === 'range' &&
+                    initialValue !== e.target.value
+                ) {
+                    parent.postMessage({
+                            pluginMessage: {
+                                type: 'decrement-credit',
+                                // You can send the new value or any other relevant information here
+                            },
+                        },
+                        '*',
+                    )
+                }
+                isDragging = false
+                initialValue = null
+            })
+
+            intensityInput.addEventListener('input', () => {
+                const intensityValue = intensityInput.value
+                parent.postMessage({
+                        pluginMessage: {
+                            type: 'intensity-change',
+                            value: intensityValue,
+                        },
+                    },
+                    '*',
+                )
+            })
+
+            spreadInput.addEventListener('input', () => {
+                const spreadValue = spreadInput.value
+                parent.postMessage({
+                        pluginMessage: {
+                            type: 'spread-change',
+                            value: spreadValue,
+                        },
+                    },
+                    '*',
+                )
+            })
+
+            intensityColorPicker.addEventListener('input', () => {
+                parent.postMessage({
+                        pluginMessage: {
+                            type: 'intensityColor-change',
+                            color: intensityColorPicker.value,
+                        },
+                    },
+                    '*',
+                )
+            })
+
+            opacityInput.addEventListener('input', () => {
+                const opacityValue = opacityInput.value
+                parent.postMessage({
+                        pluginMessage: {
+                            type: 'opacity-change',
+                            value: opacityValue,
+                            updateOnly: true,
+                        },
+                    },
+                    '*',
+                )
+            })
+
+            spreadColorPicker.addEventListener('input', () => {
+                parent.postMessage({
+                        pluginMessage: {
+                            type: 'spreadColor-change',
+                            color: spreadColorPicker.value,
+                        },
+                    },
+                    '*',
+                )
+            })
         })
 
-      const intensityColorPicker = document.getElementById(
-        'intensityColorPicker',
-      )
-      const spreadColorPicker = document.getElementById('spreadColorPicker')
-
-      let isDragging = false
-      let initialValue = null
-
-      document.addEventListener('mousedown', (e) => {
-        if (e.target.type === 'range') {
-          isDragging = true
-          initialValue = e.target.value
+        window.onload = () => {
+            parent.postMessage({
+                    pluginMessage: {
+                        type: 'ui-ready',
+                    },
+                },
+                '*',
+            )
         }
-      })
 
-      document.addEventListener('mouseup', (e) => {
-        if (
-          isDragging &&
-          e.target.type === 'range' &&
-          initialValue !== e.target.value
-        ) {
-          parent.postMessage(
-            {
-              pluginMessage: {
-                type: 'decrement-credit',
-                // You can send the new value or any other relevant information here
-              },
-            },
-            '*',
-          )
+        window.onmessage = (event) => {
+            if (event.origin !== ' http://localhost:3000') {
+                return
+            }
+            if (event.data && event.data.pluginMessage) {
+                const {
+                    type,
+                    value,
+                    color,
+                    creditsLeft
+                } = event.data.pluginMessage
+
+                console.log('data', event.data)
+                console.log('value', value)
+
+                if (type === 'update-intensity-ui') {
+                    document.getElementById('intensity').value = value
+                }
+                if (type === 'update-spread-ui') {
+                    document.getElementById('spread').value = value
+                }
+                if (type === 'reset-range-ui') {
+                    document.getElementById('intensity').value = 0
+                    document.getElementById('spread').value = 0
+                    document.getElementById('opacity').value = 100
+                }
+                if (type === 'update-intensityColor-ui') {
+                    document.getElementById('intensity-colorpicker').value = color
+                }
+                if (type === 'update-spreadColor-ui') {
+                    document.getElementById('spreadColorPicker').value = color
+                }
+                if (type === 'update-opacity-ui') {
+                    document.getElementById('opacity').value = Number(value)
+                }
+                if (type === 'update-credits') {
+                    const creditsRemaining = document.getElementById('creditsRemaining')
+                    if (creditsRemaining) {
+                        creditsRemaining.value = creditsLeft.toString()
+                    }
+                }
+            } else {
+                console.log(
+                    'Received message without pluginMessage property',
+                    event.data,
+                )
+            }
         }
-        isDragging = false
-        initialValue = null
-      })
-
-      intensityInput.addEventListener('input', () => {
-        const intensityValue = intensityInput.value
-        parent.postMessage(
-          {
-            pluginMessage: {
-              type: 'intensity-change',
-              value: intensityValue,
-            },
-          },
-          '*',
-        )
-      })
-
-      spreadInput.addEventListener('input', () => {
-        const spreadValue = spreadInput.value
-        parent.postMessage(
-          {
-            pluginMessage: {
-              type: 'spread-change',
-              value: spreadValue,
-            },
-          },
-          '*',
-        )
-      })
-
-      intensityColorPicker.addEventListener('input', () => {
-        parent.postMessage(
-          {
-            pluginMessage: {
-              type: 'intensityColor-change',
-              color: intensityColorPicker.value,
-            },
-          },
-          '*',
-        )
-      })
-
-      opacityInput.addEventListener('input', () => {
-        const opacityValue = opacityInput.value
-        parent.postMessage(
-          {
-            pluginMessage: {
-              type: 'opacity-change',
-              value: opacityValue,
-              updateOnly: true,
-            },
-          },
-          '*',
-        )
-      })
-
-      spreadColorPicker.addEventListener('input', () => {
-        parent.postMessage(
-          {
-            pluginMessage: {
-              type: 'spreadColor-change',
-              color: spreadColorPicker.value,
-            },
-          },
-          '*',
-        )
-      })
-    })
-
-    window.onload = () => {
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: 'ui-ready',
-          },
-        },
-        '*',
-      )
-    }
-
-    window.onmessage = (event) => {
-      if (event.origin !== ' http://localhost:3000') {
-        return
-      }
-      if (event.data && event.data.pluginMessage) {
-        const { type, value, color, creditsLeft } = event.data.pluginMessage
-
-        console.log('data', event.data)
-        console.log('value', value)
-
-        if (type === 'update-intensity-ui') {
-          document.getElementById('intensity').value = value
-        }
-        if (type === 'update-spread-ui') {
-          document.getElementById('spread').value = value
-        }
-        if (type === 'reset-range-ui') {
-          document.getElementById('intensity').value = 0
-          document.getElementById('spread').value = 0
-          document.getElementById('opacity').value = 100
-        }
-        if (type === 'update-intensityColor-ui') {
-          document.getElementById('intensityColorPicker').value = color
-        }
-        if (type === 'update-spreadColor-ui') {
-          document.getElementById('spreadColorPicker').value = color
-        }
-        if (type === 'update-opacity-ui') {
-          document.getElementById('opacity').value = Number(value)
-        }
-        if (type === 'update-credits') {
-          const creditsRemaining = document.getElementById('creditsRemaining')
-          if (creditsRemaining) {
-            creditsRemaining.value = creditsLeft.toString()
-          }
-        }
-      } else {
-        console.log(
-          'Received message without pluginMessage property',
-          event.data,
-        )
-      }
-    }
-  </script>
-</div>
+    </script>
+</body>
