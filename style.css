@@ -1,5 +1,5 @@
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     overflow: hidden;
 }
 
@@ -71,13 +71,6 @@ body {
 .color-picker-group {
     display: flex;
     align-items: center;
-}
-
-.credits-info {
-    display: flex;
-    align-items: center;
-    margin-top: 10px;
-    /* Adjust as needed */
 }
 
 .upgrade-container {
