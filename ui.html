@@ -80,95 +80,41 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const intensityInput = document.getElementById('intensity')
-            const spreadInput = document.getElementById('spread')
-            const opacityInput = document.getElementById('opacity')
-            document
-                .getElementById('upgradeButton')
-                .addEventListener('click', function(event) {
-                    // Prevent default action if the href hasn't been updated yet
-                    event.preventDefault()
-
-                    // Retrieve the user token and fetch user data
-                    figma.clientStorage.getAsync('userToken').then((userToken) => {
-                        if (userToken) {
-                            fetch('https://samoramabuya.com/api/paypal/create-subscription', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        Authorization: `Bearer ${userToken}`,
-                                    },
-                                    body: JSON.stringify({
-                                        planId: 'P-0TU03491DA613900VMXEIHTQ', // Your PayPal plan ID
-                                    }),
-                                })
-                                .then((response) => response.json())
-                                .then((data) => {
-                                    // Update the href attribute with the PayPal URL
-                                    const upgradeButton = document.getElementById('upgradeButton')
-                                    upgradeButton.href = data.approvalUrl
-                                        // Optionally, trigger the navigation immediately
-                                    window.location.href = data.approvalUrl
-                                })
-                                .catch((error) => console.error('Error:', error))
-                        } else {
-                            console.error('User token is not available.')
-                        }
-                    })
-                })
-
+            const intensitySlider = document.getElementById('intensity-slider')
+            const spreadSlider = document.getElementById('spread-slider')
+            const opacitySlider = document.getElementById('opacity-slider')
             const intensityColorPicker = document.getElementById(
-                'intensityColorPicker',
+                'intensity-colorpicker',
             )
-            const spreadColorPicker = document.getElementById('spreadColorPicker')
+            const spreadColorPicker = document.getElementById('spread-colorpicker')
 
-            let isDragging = false
-            let initialValue = null
-
-            document.addEventListener('mousedown', (e) => {
-                if (e.target.type === 'range') {
-                    isDragging = true
-                    initialValue = e.target.value
-                }
-            })
-
-            document.addEventListener('mouseup', (e) => {
-                if (
-                    isDragging &&
-                    e.target.type === 'range' &&
-                    initialValue !== e.target.value
-                ) {
-                    parent.postMessage({
-                            pluginMessage: {
-                                type: 'decrement-credit',
-                                // You can send the new value or any other relevant information here
-                            },
-                        },
-                        '*',
-                    )
-                }
-                isDragging = false
-                initialValue = null
-            })
-
-            intensityInput.addEventListener('input', () => {
-                const intensityValue = intensityInput.value
+            intensitySlider.addEventListener('input', () => {
                 parent.postMessage({
                         pluginMessage: {
                             type: 'intensity-change',
-                            value: intensityValue,
+                            value: intensitySlider.value,
                         },
                     },
                     '*',
                 )
             })
 
-            spreadInput.addEventListener('input', () => {
-                const spreadValue = spreadInput.value
+            spreadSlider.addEventListener('input', () => {
                 parent.postMessage({
                         pluginMessage: {
                             type: 'spread-change',
-                            value: spreadValue,
+                            value: spreadSlider.value,
+                        },
+                    },
+                    '*',
+                )
+            })
+
+            opacitySlider.addEventListener('input', () => {
+                parent.postMessage({
+                        pluginMessage: {
+                            type: 'opacity-change',
+                            value: opacitySlider.value,
                         },
                     },
                     '*',
@@ -180,19 +126,6 @@
                         pluginMessage: {
                             type: 'intensityColor-change',
                             color: intensityColorPicker.value,
-                        },
-                    },
-                    '*',
-                )
-            })
-
-            opacityInput.addEventListener('input', () => {
-                const opacityValue = opacityInput.value
-                parent.postMessage({
-                        pluginMessage: {
-                            type: 'opacity-change',
-                            value: opacityValue,
-                            updateOnly: true,
                         },
                     },
                     '*',
@@ -211,62 +144,38 @@
             })
         })
 
-        window.onload = () => {
-            parent.postMessage({
-                    pluginMessage: {
-                        type: 'ui-ready',
-                    },
-                },
-                '*',
-            )
-        }
-
         window.onmessage = (event) => {
-            if (event.origin !== ' http://localhost:3000') {
-                return
-            }
             if (event.data && event.data.pluginMessage) {
                 const {
                     type,
                     value,
-                    color,
-                    creditsLeft
+                    color
                 } = event.data.pluginMessage
 
-                console.log('data', event.data)
-                console.log('value', value)
-
-                if (type === 'update-intensity-ui') {
-                    document.getElementById('intensity').value = value
+                switch (type) {
+                    case 'update-intensity-ui':
+                        document.getElementById('intensity-slider').value = value
+                        break
+                    case 'update-spread-ui':
+                        document.getElementById('spread-slider').value = value
+                        break
+                    case 'update-opacity-ui':
+                        document.getElementById('opacity-slider').value = Number(value)
+                        break
+                    case 'update-intensityColor-ui':
+                        document.getElementById('intensity-colorpicker').value = color
+                        break
+                    case 'update-spreadColor-ui':
+                        document.getElementById('spread-colorpicker').value = color
+                        break
+                    case 'reset-range-ui':
+                        document.getElementById('intensity-slider').value = 0
+                        document.getElementById('spread-slider').value = 0
+                        document.getElementById('opacity-slider').value = 100
+                        break
+                    default:
+                        console.log('Unknown message type:', type)
                 }
-                if (type === 'update-spread-ui') {
-                    document.getElementById('spread').value = value
-                }
-                if (type === 'reset-range-ui') {
-                    document.getElementById('intensity').value = 0
-                    document.getElementById('spread').value = 0
-                    document.getElementById('opacity').value = 100
-                }
-                if (type === 'update-intensityColor-ui') {
-                    document.getElementById('intensity-colorpicker').value = color
-                }
-                if (type === 'update-spreadColor-ui') {
-                    document.getElementById('spreadColorPicker').value = color
-                }
-                if (type === 'update-opacity-ui') {
-                    document.getElementById('opacity').value = Number(value)
-                }
-                if (type === 'update-credits') {
-                    const creditsRemaining = document.getElementById('creditsRemaining')
-                    if (creditsRemaining) {
-                        creditsRemaining.value = creditsLeft.toString()
-                    }
-                }
-            } else {
-                console.log(
-                    'Received message without pluginMessage property',
-                    event.data,
-                )
             }
         }
     </script>
