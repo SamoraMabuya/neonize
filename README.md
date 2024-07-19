@@ -1,49 +1,67 @@
 # Neonize
 
-## Introduction
+### What Neonize Offers
 
-**Neonize** is a dynamic Figma plugin designed to enhance the user experience through interactive color and size adjustments. It allows designers to easily modify and visualize elements within their Figma projects, offering an intuitive and user-friendly interface.
+**Glow Color:** Using our built-in color picker on the plugin, select any color of your choice to alter the glow color.
+**Glow Intensity:** A range slider that adjusts the intensity of the glow on your selections.
+**Selection Types:** The plugin can only be used on rectangles, ellipses, polygons, lines, stars, arrows, vectors, and text.
 
-## Features
+### How to Use Neonize:
 
-- **Interactive Sliders**: Adjust the size and color of elements in real-time.
-- **Customizable UI**: Offers a tailored experience with flexible UI elements.
-- **Seamless Integration**: Works smoothly within the Figma environment.
+**Select a Node:** Choose the design element you want to enhance.
+**Valid nodes:** rectangle, ellipse, polygon, line, star, arrows, vector, text.
+**Adjust glow intensity:** Drag the knob on the slider to intensify the glow brightness on the selected shape or text.
+**Pick a Color:** Use the color picker on the plugin to select the desired glow color.
+**Limitations:** Neonize is optimized to work on specific target types. This includes rectangle, ellipse, polygon, line, star, arrows, vector, text.
 
-## Getting Started
-
-1. **Installation**: Install Neonize directly from the Figma plugin store: [Neonize on Figma](https://www.figma.com/community/plugin/1300043926906272268/neonize).
-2. **Basic Usage**: After installation, access Neonize in the Figma plugins section to start modifying your designs.
+The plugin has not yet been tested properly to enhance multiple nodes simultaneously, and could mean that unexpected results could be rendered when attempting to run Neonize on several nodes at the same time.
 
 ## Installation for Developers
 
-- **Prerequisites**: Ensure Node.js and npm are installed. [Node.js Download](https://nodejs.org/en/download/).
-- **Install TypeScript**: Run `npm install -g typescript` in your terminal.
-- **Figma Plugin Typings**: Run `npm install --save-dev @figma/plugin-typings` in your plugin directory.
-- **Compilation**: Use Visual Studio Code to compile TypeScript to JavaScript. Select "npm: watch" in the "Terminal > Run Build Task..." menu.
+To set up the project for development, follow these steps:
 
-## Documentation
+### Prerequisites
 
-Refer to the [official Figma plugin documentation](https://www.figma.com/plugin-docs/plugin-quickstart-guide/) for detailed guidance on plugin development and usage.
+- Ensure Node.js and npm are installed on your machine. [Node.js Download](https://nodejs.org/en/download/).
+- Figma Desktop App installed (Windows or macOS)
 
-## Contributing
+### Setup
 
-Contributions to improve Neonize are welcome. Please follow our contributing guidelines detailed in our GitHub repository: [Neonize on GitHub](https://github.com/SamoraMabuya/neonize).
+**1. Clone the Repository**
 
-## Support and Community
+```sh
+git clone https://github.com/SamoraMabuya/neonize.git
+cd neonize
 
-For support, questions, or to join our community:
-- **Troubleshooting and Discussions**: Visit our [GitHub Issues](https://github.com/SamoraMabuya/neonize/issues).
-- **Community Engagement**: Join discussions in the Figma Community plugin page.
+```
 
-## Updates and Changelog
+**2. Install dependencies**
 
-Keep an eye on our GitHub repository for the latest updates and changes.
+```sh
+   npm install
 
-## About the Author
+```
 
-Neonize is developed by Samora Mabuya, a passionate designer and developer focused on creating intuitive and innovative tools for designers.
+**3. Run project**
 
-## License
+```sh
+ npm run build
+```
 
-Neonize is released under the MIT License. See the LICENSE file in the GitHub repository for more details.
+or
+
+```sh
+npm run watch
+```
+
+\*\*\*4. Open Figma App
+
+- Click the menu icon
+- Navigate to Plugins > Development > Import plugin from manifest
+- Navigate to the root of the cloned project and select manifest.json
+
+If prompted with a floating menu, just select Neonize which has a "development" tag next to it.
+
+You should see the plugin appear on your screen.
+
+### Have Fun!

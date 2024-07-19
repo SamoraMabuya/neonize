@@ -5,7 +5,7 @@ figma.showUI(__html__);
 figma.ui.resize(400, 335);
 
 // Convert hex color to RGBA
-function hexToRgb(hex: string): RGBA {
+const hexToRgb = (hex: string): RGBA => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? {
